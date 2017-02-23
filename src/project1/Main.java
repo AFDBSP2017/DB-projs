@@ -37,19 +37,19 @@ import java.io.IOException;
 public class Main{
 
 	
-	public enum columndDataTypess  {String,varchar,Char,Int,decimal,date}; 
+	//public enum columndDataTypess  {String,varchar,Char,Int,decimal,date}; 
     public static BufferedReader br = null;
-    public static Map<String,Integer> columnNameToIndexMap = null;
     //String currentDir = System.getProperty("user.dir"); 
     //System.out.println(currentDir);
     public static String csvFile = "src\\project1\\data\\";
     public static String line = "";
-    public static ArrayList <String> columnDataTypes = new ArrayList <String>();
     public static Statement statement;
     public static Scanner scan;
     public static CCJSqlParser parser;
     public static PlainSelect plain;
     public static int columnIndexesToFetchInSelectStatement[];
+    public static ArrayList <String> columnDataTypes = new ArrayList <String>();
+    public static Map<String,Integer> columnNameToIndexMap = null;
     public static Select select;
     public static SelectBody body;
     
@@ -57,11 +57,13 @@ public class Main{
     {
 
     	//create table R(A int, B String, C String, D int ); select A,B,C,D from R
+    	//create table R(A int, B String, C String, D int ); select A,B from R where A=1 and B=1;select * from R
     	readQueries();
     	parseQueries();
 
-
     }
+    
+    
     
     public static void parseQueries() throws Exception
     {
@@ -75,7 +77,10 @@ public class Main{
             }
             else if(statement instanceof Select)
             {
-            	parseSelectStatement();
+            	System.out.println("statement = "+statement);
+            	parseSelectStatement();     
+            	initialiseDataStructures(); //to process next command
+
             } 
             else 
             {
@@ -86,7 +91,14 @@ public class Main{
     }
     
     
-    
+
+    public static void initialiseDataStructures()
+    {
+        columnIndexesToFetchInSelectStatement = null;
+        //columnDataTypes = null;  //create table is one command
+        //columnNameToIndexMap = null;
+    	 csvFile = "src\\project1\\data\\";
+    }
     
     
     public static void parseSelectStatement() throws Exception
@@ -161,14 +173,14 @@ public class Main{
         String str = si.toString();
         if(str.contains("*"))
         {
-        	System.out.println("Contains *" + si);
+        	//System.out.println("Contains *" + si);
         	columnIndexesToFetchInSelectStatement = new int[columnNameToIndexMap.size()] ;
         }
         else
         {
         	columnIndexesToFetchInSelectStatement = new int[si.size()] ;
         }
-        System.out.println("Size  = " +si.size());
+        System.out.println("Size  = " +columnIndexesToFetchInSelectStatement.length);
         int i=0;
         
         //column names in select statement
@@ -181,19 +193,23 @@ public class Main{
         		//put all column names in fetch list
         		for (Map.Entry<String, Integer> entry : columnNameToIndexMap.entrySet()) {
         		    //String key = entry.getKey();
-        		    Integer value = entry.getValue();
-        		    System.out.println("value = " +value);
-        		    columnIndexesToFetchInSelectStatement[i]=value; //save indexes of all columns to fetch
+        		    Integer col_index = entry.getValue();
+        		   // System.out.println("value = " +value);
+        		    columnIndexesToFetchInSelectStatement[i]=col_index; //save indexes of all columns to fetch
                 	i++;
         		}
         		
-        		return; //* cannot be with any other column name
+        		return; //  "*" cannot be with any other column name
         	}
-        	System.out.println("Corresponding Column Index = " + columnNameToIndexMap.get(col_name));
-        	columnIndexesToFetchInSelectStatement[i]=columnNameToIndexMap.get(col_name); //save indexes of all columns to fetch
-        	i++;
+        	else
+        	{
+	        	//System.out.println("Corresponding Column Index = " + columnNameToIndexMap.get(col_name));
+	        	columnIndexesToFetchInSelectStatement[i]=columnNameToIndexMap.get(col_name); //save indexes of all columns to fetch
+	        	i++;
+        	}
         }
     }
+    
     
     public static void getColumnDataTypesAndMapColumnNameToIndex()
     {
