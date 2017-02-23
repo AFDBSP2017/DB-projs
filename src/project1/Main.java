@@ -157,13 +157,38 @@ public class Main{
         plain = (PlainSelect)body;
         List<SelectItem> si =  plain.getSelectItems();
         ListIterator<SelectItem> it = si.listIterator();
-        columnIndexesToFetchInSelectStatement = new int[si.size()] ;
+        
+        String str = si.toString();
+        if(str.contains("*"))
+        {
+        	System.out.println("Contains *" + si);
+        	columnIndexesToFetchInSelectStatement = new int[columnNameToIndexMap.size()] ;
+        }
+        else
+        {
+        	columnIndexesToFetchInSelectStatement = new int[si.size()] ;
+        }
+        System.out.println("Size  = " +si.size());
         int i=0;
         
         //column names in select statement
         while(it.hasNext()){
         	String col_name = (String) it.next().toString();
         	System.out.println("Column to fetch in Select Query = " +col_name);
+        	
+        	if(col_name.equals("*"))  //fetch all the columns
+        	{
+        		//put all column names in fetch list
+        		for (Map.Entry<String, Integer> entry : columnNameToIndexMap.entrySet()) {
+        		    //String key = entry.getKey();
+        		    Integer value = entry.getValue();
+        		    System.out.println("value = " +value);
+        		    columnIndexesToFetchInSelectStatement[i]=value; //save indexes of all columns to fetch
+                	i++;
+        		}
+        		
+        		return; //* cannot be with any other column name
+        	}
         	System.out.println("Corresponding Column Index = " + columnNameToIndexMap.get(col_name));
         	columnIndexesToFetchInSelectStatement[i]=columnNameToIndexMap.get(col_name); //save indexes of all columns to fetch
         	i++;
