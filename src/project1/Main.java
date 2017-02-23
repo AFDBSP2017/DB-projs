@@ -25,6 +25,7 @@ import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SelectBody;
 import net.sf.jsqlparser.statement.select.SelectItem;
 import net.sf.jsqlparser.statement.select.WithItem;
+import net.sf.jsqlparser.expression.Expression;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -98,9 +99,17 @@ public class Main{
         select = (Select)statement;
         body = select.getSelectBody();
         
+
         if(body instanceof PlainSelect){
+        	
         	findcolumnsToFetchInSelectStatement();
         	getSelectiveColumnsAsPerSelectStatement();
+
+        	if (plain.getWhere() != null) 
+        	{
+        		System.out.println(plain.getWhere());
+        	}
+        	
 //            BinaryExpression ex   =  (BinaryExpression)plain.getWhere();
 //            System.out.println(
 //           ex.getLeftExpression()+" , "+
