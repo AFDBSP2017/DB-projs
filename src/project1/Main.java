@@ -4,6 +4,7 @@ import java.io.StringReader;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -29,8 +30,10 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 
 
+
 public class Main{
 
+	public enum data_types  {String,varchar,Char,Int,decimal,date}; 
     public static void main(String[] args) throws Exception
     {
 
@@ -49,6 +52,8 @@ public class Main{
         String csvFile = "src\\project1\\data\\";
         BufferedReader br = null;
         String line = "";
+        
+        ArrayList <String> data_type = new ArrayList <String>();
 
         while(statement != null)
         {
@@ -119,12 +124,16 @@ public class Main{
             	columnName = new HashMap<String,Integer>();
             	List<ColumnDefinition> si = create.getColumnDefinitions();
             	ListIterator<ColumnDefinition> it = si.listIterator();
+            	
             	int i=0;
                 while(it.hasNext()){
                 	//System.out.println(it.next());
-                	//String name = it.next().getColumnName();
-                	columnName.put(it.next().getColumnName() ,i++);
-                	//System.out.println(name);
+                	
+                	ColumnDefinition cd = it.next();
+                	data_type.add(cd.getColDataType().toString());
+                	System.out.println("type = "+ data_type.get(i));
+                	columnName.put(cd.getColumnName() ,i++);
+                	
             	
                 }
                 
