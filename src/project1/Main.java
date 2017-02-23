@@ -44,7 +44,7 @@ public class Main{
     //System.out.println(currentDir);
     public static String csvFile = "src\\project1\\data\\";
     public static String line = "";
-    public static ArrayList <String> columndDataTypes = new ArrayList <String>();
+    public static ArrayList <String> columnDataTypes = new ArrayList <String>();
     public static Statement statement;
     public static Scanner scan;
     public static CCJSqlParser parser;
@@ -184,8 +184,8 @@ public class Main{
         	//System.out.println(it.next());
         	
         	ColumnDefinition cd = it.next();
-        	columndDataTypes.add(cd.getColDataType().toString());
-        	System.out.println("type = "+ columndDataTypes.get(i));
+        	columnDataTypes.add(cd.getColDataType().toString());
+        	System.out.println("type = "+ columnDataTypes.get(i));
         	columnNameToIndexMap.put(cd.getColumnName() ,i++);
         }
     }
