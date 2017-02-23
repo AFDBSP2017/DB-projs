@@ -49,7 +49,7 @@ public class Main{
     public static Scanner scan;
     public static CCJSqlParser parser;
     public static PlainSelect plain;
-    public static int columnsToFetchInWhereStatement[];
+    public static int columnIndexesToFetchInSelectStatement[];
     public static Select select;
     public static SelectBody body;
     
@@ -140,13 +140,13 @@ public class Main{
         while ((line = br.readLine()) != null) {
 
             // use | as separator
-            String[] fetchColumnsInSelectStatement = line.split("\\|");
+            String[] ColumnsInSelectStatement = line.split("\\|");
 
-            for(int i=0;i<columnsToFetchInWhereStatement.length-1;i++)
+            for(int i=0;i<columnIndexesToFetchInSelectStatement.length-1;i++)
             {
-                System.out.print(fetchColumnsInSelectStatement[columnsToFetchInWhereStatement[i]]+"|");
+                System.out.print(ColumnsInSelectStatement[columnIndexesToFetchInSelectStatement[i]]+"|");
             }
-            System.out.print(fetchColumnsInSelectStatement[columnsToFetchInWhereStatement[columnsToFetchInWhereStatement.length-1]]+"\n");
+            System.out.print(ColumnsInSelectStatement[columnIndexesToFetchInSelectStatement[columnIndexesToFetchInSelectStatement.length-1]]+"\n");
         }
     }
     
@@ -157,7 +157,7 @@ public class Main{
         plain = (PlainSelect)body;
         List<SelectItem> si =  plain.getSelectItems();
         ListIterator<SelectItem> it = si.listIterator();
-        columnsToFetchInWhereStatement = new int[si.size()] ;
+        columnIndexesToFetchInSelectStatement = new int[si.size()] ;
         int i=0;
         
         //column names in select statement
@@ -165,7 +165,7 @@ public class Main{
         	String col_name = (String) it.next().toString();
         	System.out.println("Column to fetch in Select Query = " +col_name);
         	System.out.println("Corresponding Column Index = " + columnNameToIndexMap.get(col_name));
-        	columnsToFetchInWhereStatement[i]=columnNameToIndexMap.get(col_name); //save indexes of all columns to fetch
+        	columnIndexesToFetchInSelectStatement[i]=columnNameToIndexMap.get(col_name); //save indexes of all columns to fetch
         	i++;
         }
     }
