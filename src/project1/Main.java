@@ -54,7 +54,7 @@ class Evallib extends Eval
 		  ); 
 		System.out.println("Result: "+result); // "Result: 3.0"
 
-		// Evaluate "1 > (3.0 * 2)"
+		// Evaluate "1 > (3.0 * 2)"--leila
 		result = 
 		  this.eval(
 		    new GreaterThan(
