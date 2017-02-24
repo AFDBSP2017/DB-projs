@@ -39,12 +39,39 @@ import java.io.IOException;
 
 class Evallib extends Eval
 {
-	
-
 	public Evallib(ColumnDefinition cd) throws SQLException {
-		// Evaluate "1 + 2.0"
-		String colName = cd.getColumnName();
+		Map<String,Integer> query = new HashMap<String,Integer>();
+		query.put("A",1);
+		query.put("B",2);
+		query.put("C",3);
+		query.put("D",4);
+		 String str= "A+B-C+D";
+		//String colName = cd.getColumnName();
 		PrimitiveValue result;
+		String strt=str;
+			
+		double sum=query.get(strt.charAt(0));
+		int i=1;
+		
+		while (i!=strt.length()){
+			
+			if(strt.charAt(i)=='+'){
+			
+				sum+=query.get(strt.charAt(i+1)); i++;
+				
+			}
+			else if(strt.charAt(i+1)=='-'){
+				
+				sum-= query.get(strt.charAt(i+1)); i++;
+				
+				
+			}
+			
+				
+				
+			}
+		
+		System.out.println("Sum= "+ sum);
 		result = 
 		  this.eval(
 		    new Addition(
@@ -114,6 +141,9 @@ public class Main{
 	    	System.out.print("$> ");
     	}
         scan.close();
+        
+     	Evallib e = new Evallib(new ColumnDefinition());
+     	e.
     	
     }
 
