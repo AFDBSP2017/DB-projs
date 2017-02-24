@@ -195,9 +195,26 @@ public class Main{
     }
 
     
+    // Returns true if 'op2' has higher or same precedence as 'op1',
+    // otherwise returns false.
+    public static boolean hasPrecedence(String op1, String op2)
+    {
+        if (op2.equals("(") || op2.equals(")"))
+            return false;
+        if ((op1.equals("*") || op1.equals("/")) && (op2.equals("+")|| op2.equals("-")))
+            return false;
+        else
+            return true;
+    }
+    
     public static void getWhereConditionList(String Expression) throws IOException
     {
+    	//postfix notation
     	//http://introcs.cs.princeton.edu/java/43stack/Evaluate.java.html
+    	//http://codinghelmet.com/?path=exercises/expression-evaluator
+    	//http://www.geeksforgeeks.org/expression-evaluation/
+    		
+    		
     	System.out.println("After replacing  " + Expression);
     	System.out.println("length = " + Expression.length());
 		
@@ -217,6 +234,7 @@ public class Main{
             }
             else if  (s.equals("("))
             {
+            	ops.push("(");
             	System.out.println("operator : (");
             }
             else if (s.equals("|"))
@@ -249,29 +267,14 @@ public class Main{
             else if (s.equals(")")) 
             {
             	System.out.println("operator : )");
-                String op = ops.pop();
-                String v = vals.pop();
-                stack_expression = vals.pop().toString() +  op + v;
-                System.out.println(stack_expression);
-                vals.push(stack_expression.toString());
                 
-                if(index ==(Expression.length() -1))
+                while (!ops.peek().equals("("))
                 {
-                	while(!ops.isEmpty())
-                	{
-                		op = ops.pop();
-                        v = vals.pop();
-                        stack_expression = vals.pop().toString() +  op + v;
-                        System.out.println(stack_expression);
-                        vals.push(stack_expression.toString());                        
-                	}
-                	
-                	stack_expression = vals.pop().toString();
-                	
-                	//System.out.println("vals stack size = "+ vals.pop() );
-                	//System.out.println("ops stack size = "+ ops.size() );
-                    break_flag = true;
+                    stack_expression = vals.pop().toString() +  ops.pop() + vals.pop();
+                    vals.push(stack_expression);
+                    
                 }
+                ops.pop();
                 /*
                 if(op.equals("+"))
                 {
@@ -294,6 +297,14 @@ public class Main{
             }
             else if (IsOperator(s)==true)
             {
+                // While top of 'ops' has same or greater precedence to current
+                // token, which is an operator. Apply operator on top of 'ops'
+                // to top two elements in values stack
+                while (!ops.empty() && hasPrecedence(s, ops.peek()))
+                {
+                 stack_expression = vals.pop().toString() +  ops.pop() + vals.pop();
+                  vals.push(stack_expression);
+                }
             	System.out.println("operator push : "+ s);
             	ops.push(s);
             	
@@ -344,6 +355,15 @@ public class Main{
             	break;
             }
         }
+        
+        while (!ops.empty())
+        {
+        	stack_expression = vals.pop().toString() +  ops.pop() + vals.pop();
+            vals.push(stack_expression);
+        }
+        
+        stack_expression =vals.pop();
+        
         //System.out.println(vals.pop());
         System.out.println(stack_expression);
         
