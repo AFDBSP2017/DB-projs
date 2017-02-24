@@ -41,8 +41,9 @@ class Evallib extends Eval
 {
 	
 
-	public Evallib() throws SQLException {
+	public Evallib(ColumnDefinition cd) throws SQLException {
 		// Evaluate "1 + 2.0"
+		String colName = cd.getColumnName();
 		PrimitiveValue result;
 		result = 
 		  this.eval(
@@ -109,7 +110,7 @@ public class Main{
     	{
 	        readQueries(temp);
 	    	parseQueries();
-	    	Evallib e = new Evallib();
+	    	//Evallib e = new Evallib();
 	    	System.out.print("$> ");
     	}
         scan.close();
@@ -437,6 +438,7 @@ public class Main{
     {
         plain = (PlainSelect)body;
         List<SelectItem> si =  plain.getSelectItems();
+        System.out.println(plain.getFromItem());
         ListIterator<SelectItem> it = si.listIterator();
         
         String str = si.toString();
@@ -480,7 +482,7 @@ public class Main{
     }
     
     
-    public static void getColumnDataTypesAndMapColumnNameToIndex()
+    public static void getColumnDataTypesAndMapColumnNameToIndex() throws SQLException
     {
 
     	CreateTable create = (CreateTable)statement;
@@ -494,6 +496,7 @@ public class Main{
         	//System.out.println(it.next());
         	
         	ColumnDefinition cd = it.next();
+        	Evallib e = new Evallib(cd);
         	columnDataTypes.add(cd.getColDataType().toString());
         	System.out.println("type = "+ columnDataTypes.get(i));
         	columnNameToIndexMap.put(cd.getColumnName() ,i++);
