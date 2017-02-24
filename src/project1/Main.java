@@ -1,21 +1,27 @@
 
 package project1;
 import java.io.StringReader;
-import java.net.URL;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Stack;
 
-import net.sf.jsqlparser.expression.BinaryExpression;
-import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.eval.Eval;
+import net.sf.jsqlparser.expression.DoubleValue;
+import net.sf.jsqlparser.expression.LongValue;
+import net.sf.jsqlparser.expression.PrimitiveValue;
+import net.sf.jsqlparser.expression.operators.arithmetic.Addition;
+import net.sf.jsqlparser.expression.operators.arithmetic.Multiplication;
+import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
+import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
+import net.sf.jsqlparser.expression.operators.relational.GreaterThan;
 import net.sf.jsqlparser.parser.CCJSqlParser;
 import net.sf.jsqlparser.parser.ParseException;
+import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
@@ -24,15 +30,50 @@ import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SelectBody;
 import net.sf.jsqlparser.statement.select.SelectItem;
-import net.sf.jsqlparser.statement.select.WithItem;
-import net.sf.jsqlparser.expression.Expression;
 
+import java.beans.Expression;
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
 
+class Evallib extends Eval
+{
+	
+
+	public Evallib() throws SQLException {
+		// Evaluate "1 + 2.0"
+		PrimitiveValue result;
+		result = 
+		  this.eval(
+		    new Addition(
+		      new LongValue(1),
+		      new DoubleValue(2.0)
+		    )
+		  ); 
+		System.out.println("Result: "+result); // "Result: 3.0"
+
+		// Evaluate "1 > (3.0 * 2)"
+		result = 
+		  this.eval(
+		    new GreaterThan(
+		      new LongValue(8),
+		      new Multiplication(
+		        new DoubleValue(3.0),
+		        new LongValue(2)
+		      )
+		    )
+		  );
+		System.out.println("Result: "+result); // "Result: false"
+	} /* we'll get what goes here shortly */
+
+	@Override
+	public PrimitiveValue eval(Column arg0) throws SQLException {
+		// TODO Auto-generated method stub
+		return null;
+	} 
+	
+}
 
 public class Main{
 
@@ -60,9 +101,11 @@ public class Main{
     	//create table R(A int, B String, C String, D int ); select A,B from R where A=1 and B=1;select * from R
     	readQueries();
     	parseQueries();
-
+    	Evallib e = new Evallib();
+    	
     }
-    
+
+
     
     
     public static void parseQueries() throws Exception
@@ -104,10 +147,6 @@ public class Main{
     public static void parseSelectStatement() throws Exception
     {
 
-//    	Iterator it = s.listIterator();
-//    	while(it.hasNext()){
-//    		System.out.println(it.next());
-//    	}
         select = (Select)statement;
         body = select.getSelectBody();
         
@@ -119,15 +158,33 @@ public class Main{
 
         	if (plain.getWhere() != null) 
         	{
-        		System.out.println(plain.getWhere());
+        		System.out.println("plain expression  " + plain.getWhere());
+        		String expression =plain.getWhere().toString();
+        		String str1 = expression.replaceAll("AND", "&&");
+        		String str2 = "(" + str1.replaceAll("OR", "||") + ")";
+        		getWhereConditionList(str2);
+        		
+        		/*
+        		if(plain.getWhere() instanceof AndExpression)
+        		{
+        		//System.out.println("where  = "+ plain.getWhere());
+        			AndExpression a = (AndExpression) plain.getWhere();
+            		System.out.println(a.getLeftExpression());
+            		System.out.println(a.getRightExpression());
+            		System.out.println(a.getStringExpression());
+        		}
+        		
+        		if(plain.getWhere() instanceof OrExpression)
+        		{
+        		//System.out.println("where  = "+ plain.getWhere());
+        			OrExpression a = (OrExpression) plain.getWhere();
+            		System.out.println(a.getLeftExpression());
+            		System.out.println(a.getRightExpression());
+            		System.out.println(a.getStringExpression());
+        		}
+        		*/
         	}
         	
-//            BinaryExpression ex   =  (BinaryExpression)plain.getWhere();
-//            System.out.println(
-//           ex.getLeftExpression()+" , "+
-//           ex.getRightExpression()+" , "+
-//           ex.getStringExpression());
-            //Expression ex = ((PlainSelect) body).getWhere().accept();;
         }
 
         else {
@@ -136,8 +193,189 @@ public class Main{
         /** Do something with the select operator **/
     
     }
+
     
+    public static void getWhereConditionList(String Expression) throws IOException
+    {
+    	//http://introcs.cs.princeton.edu/java/43stack/Evaluate.java.html
+    	System.out.println("After replacing  " + Expression);
+    	System.out.println("length = " + Expression.length());
+		
+    	int index =0;
+    	Stack<String> ops  = new Stack<String>();
+        Stack<String> vals = new Stack<String>();
+        String stack_expression=null;
+        boolean break_flag=false;
+        
+        while (index < Expression.length()) {
+            String s = String.valueOf(Expression.charAt(index));
+            //System.out.println("s : "+ s);
+            if(s.equals(" "))
+            {
+            	index++;
+            	continue;
+            }
+            else if  (s.equals("("))
+            {
+            	System.out.println("operator : (");
+            }
+            else if (s.equals("|"))
+            {
+
+            	if((index < Expression.length() -1) && (String.valueOf(Expression.charAt(index+1)).equals("|")))
+            	{
+            		index++;
+            		index++;
+            		ops.push("||");
+            		System.out.println("operator : ||");
+            		continue;
+            	}
+            	ops.push(s);
+            	System.out.println("operator : |");
+            }
+            else if (s.equals("&"))
+            {
+            	if((index < Expression.length() -1) && (String.valueOf(Expression.charAt(index+1)).equals("&")))
+            	{
+            		index++;
+            		index++;
+            		ops.push("&&");
+            		System.out.println("operator : &&");
+            		continue;
+            	}
+            	ops.push(s);
+            	System.out.println("operator : &");
+            }
+            else if (s.equals(")")) 
+            {
+            	System.out.println("operator : )");
+                String op = ops.pop();
+                String v = vals.pop();
+                stack_expression = vals.pop().toString() +  op + v;
+                System.out.println(stack_expression);
+                vals.push(stack_expression.toString());
+                
+                if(index ==(Expression.length() -1))
+                {
+                	while(!ops.isEmpty())
+                	{
+                		op = ops.pop();
+                        v = vals.pop();
+                        stack_expression = vals.pop().toString() +  op + v;
+                        System.out.println(stack_expression);
+                        vals.push(stack_expression.toString());                        
+                	}
+                	
+                	stack_expression = vals.pop().toString();
+                	
+                	//System.out.println("vals stack size = "+ vals.pop() );
+                	//System.out.println("ops stack size = "+ ops.size() );
+                    break_flag = true;
+                }
+                /*
+                if(op.equals("+"))
+                {
+                	stack_expression += vals.pop().toString() +  "+" + v;
+                }
+                else if (op.equals("-"))
+                {
+                	stack_expression += vals.pop().toString() +  "-" + v;
+                }
+                else if (op.equals("*"))
+                {
+                	stack_expression += vals.pop().toString() +  "*" + v;
+                }
+                else if (op.equals("/"))
+                {
+                	stack_expression += vals.pop().toString() +  "/" + v;
+                }
+                */
+
+            }
+            else if (IsOperator(s)==true)
+            {
+            	System.out.println("operator push : "+ s);
+            	ops.push(s);
+            	
+            }
+            else
+            {
+            	int startindex= index;
+            	
+            	int endindex = startindex;
+            	String nextchar = String.valueOf(Expression.charAt(endindex+1));
+            	//System.out.println("startindex  : "+ startindex + "   nextchar : "+ nextchar);
+            	while((endindex < Expression.length()) && (IsOperator(nextchar)==false))
+            	{
+            		
+            		if(endindex == Expression.length()-1)
+            		{
+            			break;
+            		}
+            		endindex++;
+            		//System.out.println("inside loop endindex = "+ endindex);
+            		nextchar = String.valueOf(Expression.charAt(endindex+1));
+            	}
+            	
+            	//System.out.println("startindex  : "+ startindex + "  " + Expression.charAt(startindex)+ "endindex : " + endindex);
+            	
+            	String operand;
+            	if(startindex == endindex)
+            	{
+            		operand = String.valueOf(Expression.charAt(startindex));  
+            	}
+            	else
+            	{
+            		operand = Expression.substring(startindex, endindex).trim();            	
+            	}
+            	System.out.println("operand to push: "+ operand);
+            	vals.push(operand.toString());
+            }
+            
+            
+            if(index!=0 && ops.isEmpty() && vals.isEmpty())
+            {
+            	System.out.println("Break");
+            	break;
+            }
+            index++;
+            if(break_flag==true)
+            {
+            	break;
+            }
+        }
+        //System.out.println(vals.pop());
+        System.out.println(stack_expression);
+        
+        /*
+        String evallib_expression = "";
+        
+        System.out.println("Test");
+
+        for(String op : ops)
+        {
+        	evallib_expression += vals.pop()+op+vals.pop();
+        	System.out.println(evallib_expression);
+        }
+        */
+        
+        
+    }
     
+    public static boolean IsOperator(String s) throws IOException
+    {
+    
+    	//System.out.println("s : "+  s);
+        if (s.equals("+") || (s.equals("-")) || (s.equals("*")) || (s.equals("/")) || (s.equals("|")) 
+        		|| (s.equals("&")) || (s.equals("==")) || (s.equals("!=")) || (s.equals("=")) || 
+        		s.equals(")") || s.equals("("))
+        {
+        	//System.out.println("return true  : "+  s);
+        	return true;
+        }
+        //System.out.println("return false");
+        return false;
+    }
     public static void getSelectiveColumnsAsPerSelectStatement() throws IOException
     {
 
@@ -156,9 +394,9 @@ public class Main{
 
             for(int i=0;i<columnIndexesToFetchInSelectStatement.length-1;i++)
             {
-                System.out.print(ColumnsInSelectStatement[columnIndexesToFetchInSelectStatement[i]]+"|");
+                //System.out.print(ColumnsInSelectStatement[columnIndexesToFetchInSelectStatement[i]]+"|");
             }
-            System.out.print(ColumnsInSelectStatement[columnIndexesToFetchInSelectStatement[columnIndexesToFetchInSelectStatement.length-1]]+"\n");
+            //System.out.print(ColumnsInSelectStatement[columnIndexesToFetchInSelectStatement[columnIndexesToFetchInSelectStatement.length-1]]+"\n");
         }
     }
     
@@ -242,6 +480,15 @@ public class Main{
         statement = parser.Statement();    	
     }
     
+}
 
-
+class WhereCondition{
+	String var1 = "";
+	String var2 = "";
+	String operator="";
+	public WhereCondition(String var1,String var2,String operator){
+		this.var1 = var1;
+		this.var2 = var2;
+		this.operator=operator;
+	}
 }
