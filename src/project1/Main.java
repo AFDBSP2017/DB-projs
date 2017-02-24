@@ -40,6 +40,8 @@ import java.io.IOException;
 class Evallib extends Eval
 {
 	public Evallib(ColumnDefinition cd) throws SQLException {
+		
+		//leila 
 		Map<String,Integer> query = new HashMap<String,Integer>();
 		query.put("A",1);
 		query.put("B",2);
