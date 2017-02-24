@@ -99,9 +99,20 @@ public class Main{
 
     	//create table R(A int, B String, C String, D int ); select A,B,C,D from R
     	//create table R(A int, B String, C String, D int ); select A,B from R where A=1 and B=1;select * from R
-    	readQueries();
-    	parseQueries();
-    	Evallib e = new Evallib();
+
+    	System.out.print("$> ");
+        scan = new Scanner(System.in);
+        String temp;
+        //= scan.nextLine();
+
+        while((temp = scan.nextLine()) != null)
+    	{
+	        readQueries(temp);
+	    	parseQueries();
+	    	Evallib e = new Evallib();
+	    	System.out.print("$> ");
+    	}
+        scan.close();
     	
     }
 
@@ -490,14 +501,13 @@ public class Main{
     }
     
     
-    public static void readQueries() throws ParseException
+    public static void readQueries(String temp) throws ParseException
     {
-        scan = new Scanner(System.in);
-        String temp = scan.nextLine();
-        scan.close();
-        StringReader input = new StringReader(temp);
-        parser = new CCJSqlParser(input);
-        statement = parser.Statement();    	
+
+	        StringReader input = new StringReader(temp);
+	        parser = new CCJSqlParser(input);
+ 
+	        statement = parser.Statement();    
     }
     
 }
