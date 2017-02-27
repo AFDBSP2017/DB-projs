@@ -213,27 +213,7 @@ public class Main{
 				String str2 = "(" + str1.replaceAll("OR", "||") + ")";
 				//getWhereConditionList(str2);
 				String te = checkLeftRightExpressions((BinaryExpression)plain.getWhere());
-				
-			
-				/*
-        		if(plain.getWhere() instanceof AndExpression)
-        		{
-        		//System.out.println("where  = "+ plain.getWhere());
-        			AndExpression a = (AndExpression) plain.getWhere();
-            		System.out.println(a.getLeftExpression());
-            		System.out.println(a.getRightExpression());
-            		System.out.println(a.getStringExpression());
-        		}
 
-        		if(plain.getWhere() instanceof OrExpression)
-        		{
-        		//System.out.println("where  = "+ plain.getWhere());
-        			OrExpression a = (OrExpression) plain.getWhere();
-            		System.out.println(a.getLeftExpression());
-            		System.out.println(a.getRightExpression());
-            		System.out.println(a.getStringExpression());
-        		}
-				 */
 			}
 
 		}
@@ -275,6 +255,116 @@ public class Main{
 		}
 		return "("+l+o+r+")";
 	}
+
+
+
+
+	public static void getSelectiveColumnsAsPerSelectStatement() throws IOException
+	{
+
+		//Get Table
+		Table table = (Table) plain.getFromItem();
+		String tableName = table.getName();
+		csvFile = csvFile+tableName+".csv";
+		//System.out.println(csvFile);
+		br = new BufferedReader(new FileReader(String.format(csvFile)));
+
+
+		while ((line = br.readLine()) != null) {
+
+			// use | as separator
+			String[] ColumnsInSelectStatement = line.split("\\|");
+
+			for(int i=0;i<columnIndexesToFetchInSelectStatement.length-1;i++)
+			{
+				System.out.print(ColumnsInSelectStatement[columnIndexesToFetchInSelectStatement[i]]+"|");
+			}
+			System.out.print(ColumnsInSelectStatement[columnIndexesToFetchInSelectStatement[columnIndexesToFetchInSelectStatement.length-1]]+"\n");
+		}
+	}
+
+
+	/* get all columns to fetch as per Select Statement*/
+	public static void findcolumnsToFetchInSelectStatement()
+	{
+		plain = (PlainSelect)body;
+		List<SelectItem> si =  plain.getSelectItems();
+		System.out.println(plain.getFromItem());
+		ListIterator<SelectItem> it = si.listIterator();
+
+		String str = si.toString();
+		if(str.contains("*"))
+		{
+			//System.out.println("Contains *" + si);
+			columnIndexesToFetchInSelectStatement = new int[columnNameToIndexMap.size()] ;
+		}
+		else
+		{
+			columnIndexesToFetchInSelectStatement = new int[si.size()] ;
+		}
+		//System.out.println("Size  = " +columnIndexesToFetchInSelectStatement.length);
+		int i=0;
+
+		//column names in select statement
+		while(it.hasNext()){
+			String col_name = (String) it.next().toString();
+			System.out.println("Column to fetch in Select Query = " +col_name);
+
+			if(col_name.equals("*"))  //fetch all the columns
+			{
+				//put all column names in fetch list
+				for (Map.Entry<String, Integer> entry : columnNameToIndexMap.entrySet()) {
+					//String key = entry.getKey();
+					Integer col_index = entry.getValue();
+					// System.out.println("value = " +value);
+					columnIndexesToFetchInSelectStatement[i]=col_index; //save indexes of all columns to fetch
+					i++;
+				}
+
+				return; //  "*" cannot be with any other column name
+			}
+			else
+			{
+				//System.out.println("Corresponding Column Index = " + columnNameToIndexMap.get(col_name));
+				columnIndexesToFetchInSelectStatement[i]=columnNameToIndexMap.get(col_name); //save indexes of all columns to fetch
+				i++;
+			}
+		}
+	}
+
+
+	public static void getColumnDataTypesAndMapColumnNameToIndex() throws SQLException
+	{
+
+		CreateTable create = (CreateTable)statement;
+		columnNameToIndexMap = new HashMap<String,Integer>();
+		List<ColumnDefinition> si = create.getColumnDefinitions();
+		ListIterator<ColumnDefinition> it = si.listIterator();
+
+		int i=0;
+		while(it.hasNext())
+		{
+			//System.out.println(it.next());
+
+			ColumnDefinition cd = it.next();
+			Evallib e = new Evallib(cd);
+			columnDataTypes.add(cd.getColDataType().toString());
+			System.out.println("type = "+ columnDataTypes.get(i));
+			columnNameToIndexMap.put(cd.getColumnName() ,i++);
+		}
+	}
+
+
+	public static void readQueries(String temp) throws ParseException
+	{
+
+		StringReader input = new StringReader(temp);
+		parser = new CCJSqlParser(input);
+
+		statement = parser.Statement();    
+	}
+	
+	
 	// Returns true if 'op2' has higher or same precedence as 'op1',
 	// otherwise returns false.
 	public static boolean hasPrecedence(String op1, String op2)
@@ -286,7 +376,7 @@ public class Main{
 		else
 			return true;
 	}
-
+	
 	public static void getWhereConditionList(String Expression) throws IOException
 	{
 		//postfix notation
@@ -446,22 +536,8 @@ public class Main{
 
 		//System.out.println(vals.pop());
 		System.out.println(stack_expression);
-
-		/*
-        String evallib_expression = "";
-
-        System.out.println("Test");
-
-        for(String op : ops)
-        {
-        	evallib_expression += vals.pop()+op+vals.pop();
-        	System.out.println(evallib_expression);
-        }
-		 */
-
-
 	}
-
+	
 	public static boolean IsOperator(String s) throws IOException
 	{
 
@@ -475,110 +551,6 @@ public class Main{
 		}
 		//System.out.println("return false");
 		return false;
-	}
-	public static void getSelectiveColumnsAsPerSelectStatement() throws IOException
-	{
-
-		//Get Table
-		Table table = (Table) plain.getFromItem();
-		String tableName = table.getName();
-		csvFile = csvFile+tableName+".csv";
-		//System.out.println(csvFile);
-		br = new BufferedReader(new FileReader(String.format(csvFile)));
-
-
-		while ((line = br.readLine()) != null) {
-
-			// use | as separator
-			String[] ColumnsInSelectStatement = line.split("\\|");
-
-			for(int i=0;i<columnIndexesToFetchInSelectStatement.length-1;i++)
-			{
-				//System.out.print(ColumnsInSelectStatement[columnIndexesToFetchInSelectStatement[i]]+"|");
-			}
-			//System.out.print(ColumnsInSelectStatement[columnIndexesToFetchInSelectStatement[columnIndexesToFetchInSelectStatement.length-1]]+"\n");
-		}
-	}
-
-
-	/* get all columns to fetch as per Select Statement*/
-	public static void findcolumnsToFetchInSelectStatement()
-	{
-		plain = (PlainSelect)body;
-		List<SelectItem> si =  plain.getSelectItems();
-		System.out.println(plain.getFromItem());
-		ListIterator<SelectItem> it = si.listIterator();
-
-		String str = si.toString();
-		if(str.contains("*"))
-		{
-			//System.out.println("Contains *" + si);
-			columnIndexesToFetchInSelectStatement = new int[columnNameToIndexMap.size()] ;
-		}
-		else
-		{
-			columnIndexesToFetchInSelectStatement = new int[si.size()] ;
-		}
-		System.out.println("Size  = " +columnIndexesToFetchInSelectStatement.length);
-		int i=0;
-
-		//column names in select statement
-		while(it.hasNext()){
-			String col_name = (String) it.next().toString();
-			System.out.println("Column to fetch in Select Query = " +col_name);
-
-			if(col_name.equals("*"))  //fetch all the columns
-			{
-				//put all column names in fetch list
-				for (Map.Entry<String, Integer> entry : columnNameToIndexMap.entrySet()) {
-					//String key = entry.getKey();
-					Integer col_index = entry.getValue();
-					// System.out.println("value = " +value);
-					columnIndexesToFetchInSelectStatement[i]=col_index; //save indexes of all columns to fetch
-					i++;
-				}
-
-				return; //  "*" cannot be with any other column name
-			}
-			else
-			{
-				//System.out.println("Corresponding Column Index = " + columnNameToIndexMap.get(col_name));
-				columnIndexesToFetchInSelectStatement[i]=columnNameToIndexMap.get(col_name); //save indexes of all columns to fetch
-				i++;
-			}
-		}
-	}
-
-
-	public static void getColumnDataTypesAndMapColumnNameToIndex() throws SQLException
-	{
-
-		CreateTable create = (CreateTable)statement;
-		columnNameToIndexMap = new HashMap<String,Integer>();
-		List<ColumnDefinition> si = create.getColumnDefinitions();
-		ListIterator<ColumnDefinition> it = si.listIterator();
-
-		int i=0;
-		while(it.hasNext())
-		{
-			//System.out.println(it.next());
-
-			ColumnDefinition cd = it.next();
-			Evallib e = new Evallib(cd);
-			columnDataTypes.add(cd.getColDataType().toString());
-			System.out.println("type = "+ columnDataTypes.get(i));
-			columnNameToIndexMap.put(cd.getColumnName() ,i++);
-		}
-	}
-
-
-	public static void readQueries(String temp) throws ParseException
-	{
-
-		StringReader input = new StringReader(temp);
-		parser = new CCJSqlParser(input);
-
-		statement = parser.Statement();    
 	}
 
 }
