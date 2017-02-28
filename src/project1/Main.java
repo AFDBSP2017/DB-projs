@@ -122,7 +122,7 @@ public class Main{
 	public static Scanner scan;
 	public static CCJSqlParser parser;
 	public static PlainSelect plain;
-	public static ArrayList <String> columnDataTypes = new ArrayList <String>();
+	public static Map<String,ArrayList <String>> columnDataTypes = new HashMap<String,ArrayList <String>>();
 	public static Map<String,Map<String,Integer>> columnIndexesInTable = new HashMap<String,Map<String,Integer>>();
 	public static Map<String,int[]> columnsToFetch = new HashMap<String,int []>();
 	public static Select select;
@@ -343,17 +343,17 @@ public class Main{
 		List<ColumnDefinition> si = create.getColumnDefinitions();
 		ListIterator<ColumnDefinition> it = si.listIterator();
 
+		ArrayList <String> dataTypes = new ArrayList <String>();
+		
 		int i=0;
 		while(it.hasNext())
 		{
-			//System.out.println(it.next());
-
 			ColumnDefinition cd = it.next();
-			//Evallib e = new Evallib(cd);
-			columnDataTypes.add(cd.getColDataType().toString());
-			System.out.println("type = "+ columnDataTypes.get(i));
+			dataTypes.add(cd.getColDataType().toString());
+			System.out.println("type = "+ dataTypes.get(i));
 			columnNameToIndexMap.put(cd.getColumnName() ,i++);
 		}
+		columnDataTypes.put(tableName, dataTypes);
 		columnIndexesInTable.put(tableName,columnNameToIndexMap);
 	}
 
