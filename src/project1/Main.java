@@ -132,12 +132,12 @@ public class Main{
 	{
 
 		Evallib e = new Evallib(new ColumnDefinition());
-		//create table R(A int, B String, C String, D int ); select A,B,C,D from R
-		//create table R(A int, B String, C String, D int ); select A,B from R where A=1 and B=1;select * from R
-		//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (B=1 AND D =9)
-		//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (C>4 AND B=1 AND D =9)
-		//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (C>4 AND B=1) AND (B>2 OR D =9)
-		System.out.println("Hello");
+	//create table R(A int, B String, C String, D int ); select A,B,C,D from R
+	//create table R(A int, B String, C String, D int ); select A,B from R where A=1 and B=1;select * from R
+	//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (B=1 AND D =9)
+	//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (C>4 AND B=1 AND D =9)
+	//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (C>4 AND B=1) AND (B>2 OR D =9)
+	System.out.println("Hello");
 		System.out.print("$> ");
 		scan = new Scanner(System.in);
 		String temp;
@@ -172,8 +172,6 @@ public class Main{
 			{
 				System.out.println("statement = "+statement);
 				parseSelectStatement();     
-				initialiseDataStructures(); //to process next command
-
 			} 
 			else 
 			{
@@ -183,15 +181,6 @@ public class Main{
 		}
 	}
 
-
-
-	public static void initialiseDataStructures()
-	{
-		//columnIndexesToFetchInSelectStatement = null;
-		//columnDataTypes = null;  //create table is one command
-		//columnNameToIndexMap = null;
-		csvFile = "src\\project1\\data\\";
-	}
 
 
 	public static void parseSelectStatement() throws Exception
