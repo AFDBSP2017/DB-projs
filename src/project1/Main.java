@@ -114,8 +114,6 @@ public class Main{
 
 	//public enum columndDataTypess  {String,varchar,Char,Int,decimal,date}; 
 	public static BufferedReader br = null;
-	//String currentDir = System.getProperty("user.dir"); 
-	//System.out.println(currentDir);
 	public static String csvFile = "src\\project1\\data\\";
 	public static String line = "";
 	public static Statement statement;
@@ -170,6 +168,7 @@ public class Main{
 			}
 			else if(statement instanceof Select)
 			{
+
 				System.out.println("statement = "+statement);
 				parseSelectStatement();     
 			} 
@@ -192,8 +191,11 @@ public class Main{
 
 		if(body instanceof PlainSelect){
 
-			findcolumnsToFetchInSelectStatement();
-			getSelectiveColumnsAsPerSelectStatement();
+			plain = (PlainSelect)body;
+			Table table = (Table) plain.getFromItem();
+			String tableName = table.getName();
+			findcolumnsToFetchInSelectStatement(tableName);
+			getSelectiveColumnsAsPerSelectStatement(tableName);
 
 			if (plain.getWhere() != null) 
 			{
@@ -251,14 +253,13 @@ public class Main{
 
 
 
-	public static void getSelectiveColumnsAsPerSelectStatement() throws IOException
+	public static void getSelectiveColumnsAsPerSelectStatement(String tableName) throws IOException
 	{
 
-		//Get Table
-		Table table = (Table) plain.getFromItem();
-		String tableName = table.getName();
+
+		//Table table = (Table) plain.getFromItem();
+		//String tableName = table.getName();
 		String csvFile_local_copy = csvFile+tableName+".csv";
-		//System.out.println(csvFile);
 		br = new BufferedReader(new FileReader(String.format(csvFile_local_copy)));
 
 
@@ -277,13 +278,12 @@ public class Main{
 
 
 	/* get all columns to fetch as per Select Statement*/
-	public static void findcolumnsToFetchInSelectStatement()
+	public static void findcolumnsToFetchInSelectStatement(String tableName)
 	{
 	
-		
-		plain = (PlainSelect)body;
-		Table table = (Table) plain.getFromItem();
-		String tableName = table.getName();
+		//plain = (PlainSelect)body;
+		//Table table = (Table) plain.getFromItem();
+		//String tableName = table.getName();
 		List<SelectItem> si =  plain.getSelectItems();
 		System.out.println(plain.getFromItem());
 		ListIterator<SelectItem> it = si.listIterator();
@@ -334,7 +334,12 @@ public class Main{
 
 	public static void getColumnDataTypesAndMapColumnNameToIndex() throws SQLException
 	{
+		//columnDataTypes=null;
+		//columnNameToIndexMapping=null;
+		//columnDataTypes = new HashMap<String,ArrayList <String>>();
+		//columnNameToIndexMapping = new HashMap<String,Map<String,Integer>>();
 
+		
 		CreateTable create = (CreateTable)statement;
 		String tableName = create.getTable().getName();
 		
