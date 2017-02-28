@@ -123,7 +123,7 @@ public class Main{
 	public static CCJSqlParser parser;
 	public static PlainSelect plain;
 	public static Map<String,ArrayList <String>> columnDataTypes = new HashMap<String,ArrayList <String>>();
-	public static Map<String,Map<String,Integer>> columnIndexesInTable = new HashMap<String,Map<String,Integer>>();
+	public static Map<String,Map<String,Integer>> columnNameToIndexMapping = new HashMap<String,Map<String,Integer>>();
 	public static Map<String,int[]> columnsToFetch = new HashMap<String,int []>();
 	public static Select select;
 	public static SelectBody body;
@@ -293,7 +293,7 @@ public class Main{
 		{
 			//System.out.println("Contains *" + si);
 			
-			columnIndexesToFetchInSelectStatement = new int[columnIndexesInTable.get(tableName).size()] ; //all columns
+			columnIndexesToFetchInSelectStatement = new int[columnNameToIndexMapping.get(tableName).size()] ; //all columns
 		}
 		else
 		{
@@ -310,7 +310,7 @@ public class Main{
 			if(col_name.equals("*"))  //fetch all the columns
 			{
 				//put all column names in fetch list
-				for (Map.Entry<String, Integer> entry : columnIndexesInTable.get(tableName).entrySet()) {
+				for (Map.Entry<String, Integer> entry : columnNameToIndexMapping.get(tableName).entrySet()) {
 					//String key = entry.getKey();
 					Integer col_index = entry.getValue();
 					// System.out.println("value = " +value);
@@ -323,7 +323,7 @@ public class Main{
 			else
 			{
 				//System.out.println("Corresponding Column Index = " + columnNameToIndexMap.get(col_name));
-				columnIndexesToFetchInSelectStatement[i]=columnIndexesInTable.get(tableName).get(col_name); //save indexes of all columns to fetch
+				columnIndexesToFetchInSelectStatement[i]=columnNameToIndexMapping.get(tableName).get(col_name); //save indexes of all columns to fetch
 				i++;
 			}
 		}
@@ -354,7 +354,7 @@ public class Main{
 			columnNameToIndexMap.put(cd.getColumnName() ,i++);
 		}
 		columnDataTypes.put(tableName, dataTypes);
-		columnIndexesInTable.put(tableName,columnNameToIndexMap);
+		columnNameToIndexMapping.put(tableName,columnNameToIndexMap);
 	}
 
 
