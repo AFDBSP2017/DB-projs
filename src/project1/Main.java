@@ -139,13 +139,10 @@ public class Main{
 		System.out.print("$> ");
 		scan = new Scanner(System.in);
 		String temp;
-		//= scan.nextLine();
-
 		while((temp = scan.nextLine()) != null)
 		{
 			readQueries(temp);
 			parseQueries();
-			//Evallib e = new Evallib();
 			System.out.print("$> ");
 		}
 		scan.close();
@@ -161,7 +158,6 @@ public class Main{
 
 		while(statement != null)
 		{
-
 			if(statement instanceof CreateTable)
 			{
 				getColumnDataTypesAndMapColumnNameToIndex();
@@ -223,8 +219,6 @@ public class Main{
 		List<Expression> el=null;
 		if(ex instanceof OrExpression || ex instanceof AndExpression)
 			el = ExpressionVisitorBase.getChildren(ex);
-		//if(ex instanceof  EqualsTo || ex instanceof EqualsTo)
-//			//el = ExpressionVisitorBase.getChildren(ex);
 		else 
 			el = null;
 		if(el!=null){
@@ -256,7 +250,6 @@ public class Main{
 	public static void getSelectiveColumnsAsPerSelectStatement(String tableName) throws IOException
 	{
 
-
 		//Table table = (Table) plain.getFromItem();
 		//String tableName = table.getName();
 		String csvFile_local_copy = csvFile+tableName+".csv";
@@ -265,7 +258,6 @@ public class Main{
 
 		while ((line = br.readLine()) != null) {
 
-			// use | as separator
 			String[] ColumnsInSelectStatement = line.split("\\|");
 
 			for(int i=0;i<columnsToFetch.get(tableName).length-1;i++)
@@ -334,15 +326,9 @@ public class Main{
 
 	public static void getColumnDataTypesAndMapColumnNameToIndex() throws SQLException
 	{
-		//columnDataTypes=null;
-		//columnNameToIndexMapping=null;
-		//columnDataTypes = new HashMap<String,ArrayList <String>>();
-		//columnNameToIndexMapping = new HashMap<String,Map<String,Integer>>();
-
-		
+	
 		CreateTable create = (CreateTable)statement;
 		String tableName = create.getTable().getName();
-		
 		System.out.println(tableName);
 		Map<String,Integer> columnNameToIndexMap = new HashMap<String,Integer>();
 		List<ColumnDefinition> si = create.getColumnDefinitions();
@@ -371,8 +357,6 @@ public class Main{
 		statement = parser.Statement();    
 	}
 	
-	
-
 }
 
 class WhereCondition{
