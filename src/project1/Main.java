@@ -10,7 +10,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Stack;
-import net.sf.jsqlparser.eval.Eval;
+
 import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.DoubleValue;
 import net.sf.jsqlparser.expression.Expression;
@@ -18,6 +18,7 @@ import net.sf.jsqlparser.expression.ExpressionVisitor;
 import net.sf.jsqlparser.expression.ExpressionVisitorBase;
 import net.sf.jsqlparser.expression.LongValue;
 import net.sf.jsqlparser.expression.PrimitiveValue;
+import net.sf.jsqlparser.expression.StringValue;
 import net.sf.jsqlparser.expression.operators.arithmetic.Addition;
 import net.sf.jsqlparser.expression.operators.arithmetic.Multiplication;
 import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
@@ -27,6 +28,7 @@ import net.sf.jsqlparser.expression.operators.relational.GreaterThan;
 import net.sf.jsqlparser.parser.CCJSqlParser;
 import net.sf.jsqlparser.parser.ParseException;
 import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.schema.PrimitiveType;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
@@ -38,80 +40,34 @@ import net.sf.jsqlparser.statement.select.SelectItem;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-import net.sf.jsqlparser.eval.*;
-class Evaluate extends Eval{
 
-	@Override
-	public PrimitiveValue eval(Column arg0) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-	
-//	public Evaluate () throws SQLException{
-//		this.
-//	}
-}
 
-class Evallib extends Eval
-{
-	public Evallib(ColumnDefinition cd) throws SQLException {
 
-		//leila 
-		Map<String,Integer> query = new HashMap<String,Integer>();
-		query.put("A",1);
-		query.put("B",2);
-		query.put("C",3);
-		query.put("D",4);
-		String str= "A+B-C+D";
-		//String colName = cd.getColumnName();
-		PrimitiveValue result;
-		String strt=str;
-
-		double sum=query.get(strt.charAt(0)+"");
-		int i=1;
-		while (i!=strt.length()){
-			if(strt.charAt(i)=='+'){
-				sum+=query.get(strt.charAt(i+1)+""); i+=2;
-			}
-			else if(strt.charAt(i)=='-'){
-				sum-= query.get(strt.charAt(i+1)+""); i+=2;
-			}
-		}
-		System.out.println("Sum= "+ sum);
-		result = 
-				this.eval(
-						new Addition(
-								new LongValue(1),
-								new DoubleValue(2.0)
-								)
-						); 
-		System.out.println("Result: "+result); // "Result: 3.0"
-
-		// Evaluate "1 > (3.0 * 2)"--leila
-		result = 
-				this.eval(
-						new GreaterThan(
-								new LongValue(8),
-								new Multiplication(
-										new DoubleValue(3.0),
-										new LongValue(2)
-										)
-								)
-						);
-		System.out.println("Result: "+result); // "Result: false"
-	} /* we'll get what goes here shortly */
-
-	@Override
-	public PrimitiveValue eval(Column arg0) throws SQLException {
-		// TODO Auto-generated method stub
-		return null;
-	} 
-
-}
 
 public class Main{
+	static class EvalLib extends Eval{
+		String tableName = "";
 
+		public EvalLib(String tableName){
+			this.tableName = tableName;
+		}
+		@Override
+		public PrimitiveValue eval(Column col) throws SQLException {
+			int index =columnNameToIndexMapping.get(tableName).get(col.getColumnName());
+			if(columnDataTypes.get(tableName).get(index).equals("String"))
+			{
+				return new StringValue(rowData[index]);
+			}
+			else if(columnDataTypes.get(tableName).get(index).equals("int"))
+			{
+				return new LongValue(rowData[index]);
+			}
+			return null;
 
+		}
+
+	}
+	static String[] rowData = null;
 	//public enum columndDataTypess  {String,varchar,Char,Int,decimal,date}; 
 	public static BufferedReader br = null;
 	public static String csvFile = "src\\project1\\data\\";
@@ -125,17 +81,18 @@ public class Main{
 	public static Map<String,int[]> columnsToFetch = new HashMap<String,int []>();
 	public static Select select;
 	public static SelectBody body;
+	public static Map<String, PrimitiveValue> rowMap= null;
 
 	public static void main(String[] args) throws Exception
 	{
 
-		Evallib e = new Evallib(new ColumnDefinition());
-	//create table R(A int, B String, C String, D int ); select A,B,C,D from R
-	//create table R(A int, B String, C String, D int ); select A,B from R where A=1 and B=1;select * from R
-	//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (B=1 AND D =9)
-	//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (C>4 AND B=1 AND D =9)
-	//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (C>4 AND B=1) AND (B>2 OR D =9)
-	System.out.println("Hello");
+
+		//create table R(A int, B String, C String, D int ); select A,B,C,D from R
+		//create table R(A int, B String, C String, D int ); select A,B from R where A=1 and B=1;select * from R
+		//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (B=1 AND D =9)
+		//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (C>4 AND B=1 AND D =9)
+		//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (C>4 AND B=1) AND (B>2 OR D =9)
+
 		System.out.print("$> ");
 		scan = new Scanner(System.in);
 		String temp;
@@ -165,7 +122,7 @@ public class Main{
 			else if(statement instanceof Select)
 			{
 
-				System.out.println("statement = "+statement);
+				//System.out.println("statement = "+statement);
 				parseSelectStatement();     
 			} 
 			else 
@@ -191,16 +148,20 @@ public class Main{
 			Table table = (Table) plain.getFromItem();
 			String tableName = table.getName();
 			findcolumnsToFetchInSelectStatement(tableName);
-			getSelectiveColumnsAsPerSelectStatement(tableName);
+			getSelectiveColumnsAsPerSelectStatement(tableName, plain.getWhere());
 
 			if (plain.getWhere() != null) 
 			{
 				System.out.println("plain expression  " + plain.getWhere());
 				String expression =plain.getWhere().toString();
+
+
+
+
 				String str1 = expression.replaceAll("AND", "&&");
 				String str2 = "(" + str1.replaceAll("OR", "||") + ")";
 				//getWhereConditionList(str2);
-				String te = checkLeftRightExpressions((BinaryExpression)plain.getWhere());
+				//String te = checkLeftRightExpressions((BinaryExpression)plain.getWhere());
 
 			}
 
@@ -212,8 +173,8 @@ public class Main{
 		/** Do something with the select operator **/
 
 	}
-	
-	
+
+
 	public static String checkLeftRightExpressions(BinaryExpression ex){
 		String l = null,r = null,o = null;
 		List<Expression> el=null;
@@ -226,9 +187,9 @@ public class Main{
 			checkLeftRightExpressions((BinaryExpression)el.get(1));
 		}
 		else{
-				l = ((BinaryExpression) ex).getLeftExpression() + "";
-				r = ((BinaryExpression) ex).getRightExpression() + "";
-				o = ((BinaryExpression) ex).getStringExpression();
+			l = ((BinaryExpression) ex).getLeftExpression() + "";
+			r = ((BinaryExpression) ex).getRightExpression() + "";
+			o = ((BinaryExpression) ex).getStringExpression();
 		}
 		if(l==null||o==null||r==null){
 			if(ex instanceof AndExpression){
@@ -247,24 +208,35 @@ public class Main{
 
 
 
-	public static void getSelectiveColumnsAsPerSelectStatement(String tableName) throws IOException
+	public static void getSelectiveColumnsAsPerSelectStatement(String tableName, Expression ex) throws IOException
 	{
+		try{
+			//Table table = (Table) plain.getFromItem();
+			//String tableName = table.getName();
+			String csvFile_local_copy = csvFile+tableName+".csv";
+			br = new BufferedReader(new FileReader(String.format(csvFile_local_copy)));
 
-		//Table table = (Table) plain.getFromItem();
-		//String tableName = table.getName();
-		String csvFile_local_copy = csvFile+tableName+".csv";
-		br = new BufferedReader(new FileReader(String.format(csvFile_local_copy)));
+			EvalLib e = new EvalLib(tableName);
+			PrimitiveValue pv = null;
+			while ((line = br.readLine()) != null) {
 
+				rowData = line.split("\\|");
+				pv = e.eval(ex);
+				if(pv.toBool()){
+					for(int i=0;i<columnsToFetch.get(tableName).length-1;i++)
+					{
+						System.out.print(rowData[columnsToFetch.get(tableName)[i]]+"|");
+					}
 
-		while ((line = br.readLine()) != null) {
+					System.out.print(rowData[columnsToFetch.get(tableName)[columnsToFetch.get(tableName).length-1]]+"\n");
+				}
 
-			String[] ColumnsInSelectStatement = line.split("\\|");
-
-			for(int i=0;i<columnsToFetch.get(tableName).length-1;i++)
-			{
-				System.out.print(ColumnsInSelectStatement[columnsToFetch.get(tableName)[i]]+"|");
+				
 			}
-			System.out.print(ColumnsInSelectStatement[columnsToFetch.get(tableName)[columnsToFetch.get(tableName).length-1]]+"\n");
+		}
+		catch(SQLException e){
+			System.out.println(e.getMessage());
+
 		}
 	}
 
@@ -272,19 +244,19 @@ public class Main{
 	/* get all columns to fetch as per Select Statement*/
 	public static void findcolumnsToFetchInSelectStatement(String tableName)
 	{
-	
+
 		//plain = (PlainSelect)body;
 		//Table table = (Table) plain.getFromItem();
 		//String tableName = table.getName();
 		List<SelectItem> si =  plain.getSelectItems();
-		System.out.println(plain.getFromItem());
+		//System.out.println(plain.getFromItem());
 		ListIterator<SelectItem> it = si.listIterator();
 		int columnIndexesToFetchInSelectStatement[];
 		String str = si.toString();
 		if(str.contains("*"))
 		{
 			//System.out.println("Contains *" + si);
-			
+
 			columnIndexesToFetchInSelectStatement = new int[columnNameToIndexMapping.get(tableName).size()] ; //all columns
 		}
 		else
@@ -297,7 +269,7 @@ public class Main{
 		//column names in select statement
 		while(it.hasNext()){
 			String col_name = (String) it.next().toString();
-			System.out.println("Column to fetch in Select Query = " +col_name);
+			//System.out.println("Column to fetch in Select Query = " +col_name);
 
 			if(col_name.equals("*"))  //fetch all the columns
 			{
@@ -319,29 +291,29 @@ public class Main{
 				i++;
 			}
 		}
-		
+
 		columnsToFetch.put(tableName,columnIndexesToFetchInSelectStatement);
 	}
 
 
 	public static void getColumnDataTypesAndMapColumnNameToIndex() throws SQLException
 	{
-	
+
 		CreateTable create = (CreateTable)statement;
 		String tableName = create.getTable().getName();
-		System.out.println(tableName);
+		//System.out.println(tableName);
 		Map<String,Integer> columnNameToIndexMap = new HashMap<String,Integer>();
 		List<ColumnDefinition> si = create.getColumnDefinitions();
 		ListIterator<ColumnDefinition> it = si.listIterator();
 
 		ArrayList <String> dataTypes = new ArrayList <String>();
-		
+
 		int i=0;
 		while(it.hasNext())
 		{
 			ColumnDefinition cd = it.next();
 			dataTypes.add(cd.getColDataType().toString());
-			System.out.println("type = "+ dataTypes.get(i));
+			//System.out.println("type = "+ dataTypes.get(i));
 			columnNameToIndexMap.put(cd.getColumnName() ,i++);
 		}
 		columnDataTypes.put(tableName, dataTypes);
@@ -356,7 +328,7 @@ public class Main{
 		parser = new CCJSqlParser(input);
 		statement = parser.Statement();    
 	}
-	
+
 }
 
 class WhereCondition{
