@@ -1,4 +1,3 @@
-// CREATE TABLE S(A int, B int, C string, D decimal);SELECT D, B FROM S WHERE D < 4.806107249677924 AND A > 47 AND B < 43
 package dubstep;
 import java.io.StringReader;
 import java.sql.SQLException;
@@ -57,7 +56,7 @@ public class Main{
 		public PrimitiveValue eval(Column col) throws SQLException {
 			
 			
-			int index =columnNameToIndexMapping.get(tableName).get(col.getColumnName());
+				int index =columnNameToIndexMapping.get(tableName).get(col.getColumnName());
 			if(columnDataTypes.get(tableName).get(index).equals("String"))
 			{
 				return new StringValue(rowData[index].trim());
@@ -98,7 +97,6 @@ public class Main{
 	public static PlainSelect plain;
 	public static Map<String,ArrayList <String>> columnDataTypes = new HashMap<String,ArrayList <String>>();
 	public static Map<String,Map<String,Integer>> columnNameToIndexMapping = new HashMap<String,Map<String,Integer>>();
-	public static Map<String,int[]> columnsToFetch = new HashMap<String,int []>();
 	public static Select select;
 	public static SelectBody body;
 	public static Map<String, PrimitiveValue> rowMap= null;
@@ -169,23 +167,7 @@ public class Main{
 			plain = (PlainSelect)body;
 			Table table = (Table) plain.getFromItem();
 			String tableName = table.getName();
-			findcolumnsToFetchInSelectStatement(tableName);
 			getSelectiveColumnsAsPerSelectStatement(tableName, plain.getWhere());
-
-			if (plain.getWhere() != null) 
-			{
-				//System.out.println("plain expression  " + plain.getWhere());
-				String expression =plain.getWhere().toString();
-
-
-
-
-				String str1 = expression.replaceAll("AND", "&&");
-				String str2 = "(" + str1.replaceAll("OR", "||") + ")";
-				//getWhereConditionList(str2);
-				//String te = checkLeftRightExpressions((BinaryExpression)plain.getWhere());
-
-			}
 
 		}
 
@@ -195,39 +177,6 @@ public class Main{
 		/** Do something with the select operator **/
 
 	}
-
-
-	public static String checkLeftRightExpressions(BinaryExpression ex){
-		String l = null,r = null,o = null;
-		List<Expression> el=null;
-		if(ex instanceof OrExpression || ex instanceof AndExpression)
-			el = ExpressionVisitorBase.getChildren(ex);
-		else 
-			el = null;
-		if(el!=null){
-			checkLeftRightExpressions((BinaryExpression)el.get(0));
-			checkLeftRightExpressions((BinaryExpression)el.get(1));
-		}
-		else{
-			l = ((BinaryExpression) ex).getLeftExpression() + "";
-			r = ((BinaryExpression) ex).getRightExpression() + "";
-			o = ((BinaryExpression) ex).getStringExpression();
-		}
-		if(l==null||o==null||r==null){
-			if(ex instanceof AndExpression){
-				System.out.println("&&");
-			}
-			else{
-				System.out.println("||");
-			}
-		}
-		else{
-			System.out.println("("+l+o+r+")");
-		}
-		return "("+l+o+r+")";
-	}
-
-
 
 
 	public static void getSelectiveColumnsAsPerSelectStatement(String tableName, Expression ex) throws IOException
@@ -240,7 +189,18 @@ public class Main{
 			StringBuilder sb = new StringBuilder();
 			EvalLib e = new EvalLib(tableName);
 			PrimitiveValue pv = null;
-			//System.out.println("Entering the while loop..");
+
+			List<SelectItem> selectclauses = plain.getSelectItems();
+			ArrayList <String> funclist = new ArrayList<String>();
+			
+			for(SelectItem selectclause: selectclauses)
+			{
+				System.out.println(selectclause);
+			//funclist.add((Function)((SelectExpressionItem)selectclause).getExpression());
+			//PrimitiveValue temp = e.eval(funcEval.getParameters().getExpressions().get(0));
+			}
+			
+			
 			while ((line = br.readLine()) != null) {
 				//System.out.println("Debug: "+line);
 				String Line1 = line.replace("|", "| ");
@@ -279,59 +239,6 @@ public class Main{
 	}
 
 
-	/* get all columns to fetch as per Select Statement*/
-	public static void findcolumnsToFetchInSelectStatement(String tableName)
-	{
-
-		//plain = (PlainSelect)body;
-		//Table table = (Table) plain.getFromItem();
-		//String tableName = table.getName();
-		List<SelectItem> si =  plain.getSelectItems();
-		//System.out.println(plain.getFromItem());
-		ListIterator<SelectItem> it = si.listIterator();
-		int columnIndexesToFetchInSelectStatement[];
-		String str = si.toString();
-		if(str.contains("*"))
-		{
-			//System.out.println("Contains *" + si);
-
-			columnIndexesToFetchInSelectStatement = new int[columnNameToIndexMapping.get(tableName).size()] ; //all columns
-		}
-		else
-		{
-			columnIndexesToFetchInSelectStatement = new int[si.size()] ;
-		}
-		//System.out.println("Size  = " +columnIndexesToFetchInSelectStatement.length);
-		int i=0;
-
-		//column names in select statement
-		while(it.hasNext()){
-			String col_name = (String) it.next().toString();
-			//System.out.println("Column to fetch in Select Query = " +col_name);
-
-			if(col_name.equals("*"))  //fetch all the columns
-			{
-				//put all column names in fetch list
-				for (Map.Entry<String, Integer> entry : columnNameToIndexMapping.get(tableName).entrySet()) {
-					//String key = entry.getKey();
-					Integer col_index = entry.getValue();
-					// System.out.println("value = " +value);
-					columnIndexesToFetchInSelectStatement[i]=col_index; //save indexes of all columns to fetch
-					i++;
-				}
-
-				return; //  "*" cannot be with any other column name
-			}
-			else
-			{
-				//System.out.println("Corresponding Column Index = " + columnNameToIndexMap.get(col_name));
-				columnIndexesToFetchInSelectStatement[i]=columnNameToIndexMapping.get(tableName).get(col_name); //save indexes of all columns to fetch
-				i++;
-			}
-		}
-
-		columnsToFetch.put(tableName,columnIndexesToFetchInSelectStatement);
-	}
 
 
 	public static void getColumnDataTypesAndMapColumnNameToIndex() throws SQLException
