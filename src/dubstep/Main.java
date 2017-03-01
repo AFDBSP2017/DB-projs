@@ -250,16 +250,16 @@ public class Main{
 					if(pv.toBool()){
 						for(int i=0;i<columnsToFetch.get(tableName).length-1;i++)
 						{
-							sb.append(rowData[columnsToFetch.get(tableName)[i]]+"|");
+							sb.append(rowData[columnsToFetch.get(tableName)[i]].trim()+"|");
 						}
 
-						sb.append(rowData[columnsToFetch.get(tableName)[columnsToFetch.get(tableName).length-1]]+"\n");
+						sb.append(rowData[columnsToFetch.get(tableName)[columnsToFetch.get(tableName).length-1]].trim()+"\n");
 					}
 				}
 				else{
 					for(int i=0;i<columnsToFetch.get(tableName).length-1;i++)
 					{
-						sb.append(rowData[columnsToFetch.get(tableName)[i]]+"|");
+						sb.append(rowData[columnsToFetch.get(tableName)[i]].trim()+"|");
 					}
 					
 					System.out.println("x  :"+rowData.length);
