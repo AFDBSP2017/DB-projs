@@ -34,7 +34,7 @@ import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import net.sf.jsqlparser.statement.create.table.CreateTable;
 import net.sf.jsqlparser.statement.select.PlainSelect;
-import net.sf.jsqlparser.statement.select.Select;
+import net.sf.jsqlparser.statement.select.Select;p
 import net.sf.jsqlparser.statement.select.SelectBody;
 import net.sf.jsqlparser.statement.select.SelectItem;
 import java.io.BufferedReader;
@@ -152,7 +152,7 @@ public class Main{
 
 			if (plain.getWhere() != null) 
 			{
-				System.out.println("plain expression  " + plain.getWhere());
+				//System.out.println("plain expression  " + plain.getWhere());
 				String expression =plain.getWhere().toString();
 
 
