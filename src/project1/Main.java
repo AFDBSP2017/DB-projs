@@ -13,6 +13,7 @@ import java.util.Stack;
 
 import net.sf.jsqlparser.eval.*;
 import net.sf.jsqlparser.expression.BinaryExpression;
+import net.sf.jsqlparser.expression.DateValue;
 import net.sf.jsqlparser.expression.DoubleValue;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.ExpressionVisitor;
@@ -54,6 +55,8 @@ public class Main{
 		}
 		@Override
 		public PrimitiveValue eval(Column col) throws SQLException {
+			
+			
 			int index =columnNameToIndexMapping.get(tableName).get(col.getColumnName());
 			if(columnDataTypes.get(tableName).get(index).equals("String"))
 			{
@@ -63,6 +66,22 @@ public class Main{
 			{
 				return new LongValue(rowData[index]);
 			}
+			else if(columnDataTypes.get(tableName).get(index).equals("varchar"))
+			{
+				return new StringValue(rowData[index]);
+			}
+			else if(columnDataTypes.get(tableName).get(index).equals("char"))
+			{
+				return new StringValue(rowData[index]);
+			}
+			else if(columnDataTypes.get(tableName).get(index).equals("decimal"))
+			{
+				return new DoubleValue(rowData[index]);
+			}
+			else if(columnDataTypes.get(tableName).get(index).equals("date"))
+			{
+				return new DateValue(rowData[index]);
+			}
 			return null;
 
 		}
@@ -71,7 +90,7 @@ public class Main{
 	static String[] rowData = null;
 	//public enum columndDataTypess  {String,varchar,Char,Int,decimal,date}; 
 	public static BufferedReader br = null;
-	public static String csvFile = "src\\project1\\data\\";
+	public static String csvFile = "data/";
 	public static String line = "";
 	public static Statement statement;
 	public static Scanner scan;
@@ -93,15 +112,17 @@ public class Main{
 		//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (B=1 AND D =9)
 		//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (C>4 AND B=1 AND D =9)
 		//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (C>4 AND B=1) AND (B>2 OR D =9)
-
+		
 		System.out.print("$> ");
 		scan = new Scanner(System.in);
 		String temp;
 		while((temp = scan.nextLine()) != null)
 		{
+			
 			readQueries(temp);
+			
 			parseQueries();
-			System.out.print("$> ");
+			System.out.print("$>");
 		}
 		scan.close();
 
@@ -216,24 +237,37 @@ public class Main{
 			//String tableName = table.getName();
 			String csvFile_local_copy = csvFile+tableName+".csv";
 			br = new BufferedReader(new FileReader(String.format(csvFile_local_copy)));
-
+			StringBuilder sb = new StringBuilder();
 			EvalLib e = new EvalLib(tableName);
 			PrimitiveValue pv = null;
+			//System.out.println("Entering the while loop..");
 			while ((line = br.readLine()) != null) {
-
+				//System.out.println("Debug: "+line);
 				rowData = line.split("\\|");
-				pv = e.eval(ex);
-				if(pv.toBool()){
+				if(plain.getWhere()!=null){
+					pv = e.eval(ex);
+					if(pv.toBool()){
+						for(int i=0;i<columnsToFetch.get(tableName).length-1;i++)
+						{
+							sb.append(rowData[columnsToFetch.get(tableName)[i]]+"|");
+						}
+
+						sb.append(rowData[columnsToFetch.get(tableName)[columnsToFetch.get(tableName).length-1]]+"\n");
+					}
+				}
+				else{
 					for(int i=0;i<columnsToFetch.get(tableName).length-1;i++)
 					{
-						System.out.print(rowData[columnsToFetch.get(tableName)[i]]+"|");
+						sb.append(rowData[columnsToFetch.get(tableName)[i]]+"|");
 					}
 
-					System.out.print(rowData[columnsToFetch.get(tableName)[columnsToFetch.get(tableName).length-1]]+"\n");
+					sb.append(rowData[columnsToFetch.get(tableName)[columnsToFetch.get(tableName).length-1]]+"\n");
 				}
-
+				
 				
 			}
+			System.out.print(sb.toString());
+			System.out.println("Exiting the while loop..");
 		}
 		catch(SQLException e){
 			System.out.println(e.getMessage());
@@ -327,7 +361,8 @@ public class Main{
 
 		StringReader input = new StringReader(temp);
 		parser = new CCJSqlParser(input);
-		statement = parser.Statement();    
+		statement = parser.Statement();  
+		
 	}
 
 }
