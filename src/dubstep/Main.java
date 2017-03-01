@@ -1,4 +1,4 @@
-
+// CREATE TABLE S(A int, B int, C string, D decimal);SELECT D, B FROM S WHERE D < 4.806107249677924 AND A > 47 AND B < 43
 package dubstep;
 import java.io.StringReader;
 import java.sql.SQLException;
@@ -60,27 +60,27 @@ public class Main{
 			int index =columnNameToIndexMapping.get(tableName).get(col.getColumnName());
 			if(columnDataTypes.get(tableName).get(index).equals("String"))
 			{
-				return new StringValue(rowData[index]);
+				return new StringValue(rowData[index].trim());
 			}
 			else if(columnDataTypes.get(tableName).get(index).equals("int"))
 			{
-				return new LongValue(rowData[index]);
+				return new LongValue(rowData[index].trim());
 			}
 			else if(columnDataTypes.get(tableName).get(index).equals("varchar"))
 			{
-				return new StringValue(rowData[index]);
+				return new StringValue(rowData[index].trim());
 			}
 			else if(columnDataTypes.get(tableName).get(index).equals("char"))
 			{
-				return new StringValue(rowData[index]);
+				return new StringValue(rowData[index].trim());
 			}
 			else if(columnDataTypes.get(tableName).get(index).equals("decimal"))
 			{
-				return new DoubleValue(rowData[index]);
+				return new DoubleValue(rowData[index].trim());
 			}
 			else if(columnDataTypes.get(tableName).get(index).equals("date"))
 			{
-				return new DateValue(rowData[index]);
+				return new DateValue(rowData[index].trim());
 			}
 			return null;
 
@@ -250,27 +250,27 @@ public class Main{
 					if(pv.toBool()){
 						for(int i=0;i<columnsToFetch.get(tableName).length-1;i++)
 						{
-							sb.append(rowData[columnsToFetch.get(tableName)[i]]+"|");
+							sb.append(rowData[columnsToFetch.get(tableName)[i]].trim()+"|");
 						}
 
-						sb.append(rowData[columnsToFetch.get(tableName)[columnsToFetch.get(tableName).length-1]]+"\n");
+						sb.append(rowData[columnsToFetch.get(tableName)[columnsToFetch.get(tableName).length-1]].trim()+"\n");
 					}
 				}
 				else{
 					for(int i=0;i<columnsToFetch.get(tableName).length-1;i++)
 					{
-						sb.append(rowData[columnsToFetch.get(tableName)[i]]+"|");
+						sb.append(rowData[columnsToFetch.get(tableName)[i]].trim()+"|");
 					}
 					
-					System.out.println("x  :"+rowData.length);
+					//System.out.println("x  :"+rowData.length);
 
-					sb.append(rowData[columnsToFetch.get(tableName)[columnsToFetch.get(tableName).length-1]]+"\n");
+					sb.append(rowData[columnsToFetch.get(tableName)[columnsToFetch.get(tableName).length-1]].trim()+"\n");
 				}
 				
 				
 			}
 			System.out.print(sb.toString());
-			System.out.println("Exiting the while loop..");
+		
 		}
 		catch(SQLException e){
 			System.out.println(e.getMessage());
