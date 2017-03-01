@@ -243,7 +243,8 @@ public class Main{
 			//System.out.println("Entering the while loop..");
 			while ((line = br.readLine()) != null) {
 				//System.out.println("Debug: "+line);
-				rowData = line.split("\\|");
+				String Line1 = line.replace("|", "| ");
+				rowData = Line1.split("\\|");
 				if(plain.getWhere()!=null){
 					pv = e.eval(ex);
 					if(pv.toBool()){
@@ -260,6 +261,8 @@ public class Main{
 					{
 						sb.append(rowData[columnsToFetch.get(tableName)[i]]+"|");
 					}
+					
+					System.out.println("x  :"+rowData.length);
 
 					sb.append(rowData[columnsToFetch.get(tableName)[columnsToFetch.get(tableName).length-1]]+"\n");
 				}
