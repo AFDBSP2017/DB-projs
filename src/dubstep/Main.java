@@ -200,12 +200,12 @@ public class Main{
 			Reader in = new FileReader(file);
 						CSVParser parser = new CSVParser(in, CSVFormat.EXCEL.withHeader(tblschema.getHeaders()).withDelimiter('|'));
 			*/
-			List<SelectItem> selectclauses = plain.getSelectItems();
+			List<SelectItem> allSelectStatements = plain.getSelectItems();
 			ArrayList <Function> selectlist = new ArrayList<Function>();
 			
-			for(SelectItem selectclause: selectclauses)
+			for(SelectItem select: allSelectStatements)
 			{
-				Expression expression = ((SelectExpressionItem)selectclause).getExpression();
+				Expression expression = ((SelectExpressionItem)select).getExpression();
 				if(expression instanceof Function)
 				{
 						Function exp =(Function)expression;
@@ -222,6 +222,8 @@ public class Main{
 				{
 					Expression operand1 = (Expression) item.getParameters().getExpressions().get(0);
 					Expression operand2 = (Expression) item.getParameters().getExpressions().get(1);
+					System.out.println("operand1 :  "+ operand1);
+					System.out.println("operand2 :  "+ operand2);
 					//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
 				}
 				else if(item.getName().equals("AVG"))
@@ -262,27 +264,26 @@ public class Main{
 				if(plain.getWhere()!=null){
 					pv = e.eval(whereExpression);
 					if(pv.toBool()){
-						for(int i=0;i<selectclauses.size()-1;i++)
+						for(int i=0;i<allSelectStatements.size()-1;i++)
 						{
-							sb.append(rowData[columnNameToIndexMapping.get(tableName).get(selectclauses.get(i).toString())].trim()+"|");
+							sb.append(rowData[columnNameToIndexMapping.get(tableName).get(allSelectStatements.get(i).toString())].trim()+"|");
 						}
 
-						sb.append(rowData[columnNameToIndexMapping.get(tableName).get(selectclauses.get(selectclauses.size()-1).toString())].trim()+"\n");
+						sb.append(rowData[columnNameToIndexMapping.get(tableName).get(allSelectStatements.get(allSelectStatements.size()-1).toString())].trim()+"\n");
 					}
 				}
 				else{
-					for(int i=0;i<selectclauses.size()-1;i++)
+					for(int i=0;i<allSelectStatements.size()-1;i++)
 					{
-						sb.append(rowData[columnNameToIndexMapping.get(tableName).get(selectclauses.get(i).toString())].trim()+"|");
+						sb.append(rowData[columnNameToIndexMapping.get(tableName).get(allSelectStatements.get(i).toString())].trim()+"|");
 					}
 					
 					//System.out.println("x  :"+rowData.length);
 
-					sb.append(rowData[columnNameToIndexMapping.get(tableName).get(selectclauses.get(selectclauses.size()-1).toString())].trim()+"\n");
+					sb.append(rowData[columnNameToIndexMapping.get(tableName).get(allSelectStatements.get(allSelectStatements.size()-1).toString())].trim()+"\n");
 					
 				}
-				
-				
+
 			}
 			System.out.print(sb.toString());
 		
