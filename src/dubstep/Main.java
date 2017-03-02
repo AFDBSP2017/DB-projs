@@ -77,8 +77,10 @@ public class Main{
 	static String[] rowData = null;
 	//public enum columndDataTypess  {String,varchar,Char,Int,decimal,date}; 
 	public static BufferedReader br = null;
-	//public static String csvFile = "src\\dubstep\\data\\";
-	public static String csvFile = "data/";
+	//
+	
+	public static String csvFile = "src\\dubstep\\data\\";
+	//public static String csvFile = "data/";
 	public static String line = "";
 	public static Statement statement;
 	public static Scanner scan;
@@ -207,8 +209,6 @@ public class Main{
 			double sum=0;
 			int row_count=0;
 			double average=0;
-			String countsAll = "COUNT"+ '('+'*'+')';
-			//System.out.println(count_all);
 			
 			boolean whereclauseabsent = (plain.getWhere()==null)?true:false;
 			
@@ -255,15 +255,16 @@ public class Main{
 								row_count++;
 								average=total/row_count;
 							}
-							else if(item.getName().equalsIgnoreCase("count(*)"))
+							else if(item.toString().toLowerCase().contains("count(*)"))
 							{
 								countAll++;
 							}
 							else if(item.getName().equalsIgnoreCase("COUNT"))
 							{
 								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-								System.out.println(operand);
-								if(operand != null)
+								int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+								String temp =(rowData[index].trim());
+								if(temp.length() != 0)
 								{
 									eval_result = e.eval(operand);
 									if(eval_result!=null)
@@ -316,13 +317,13 @@ public class Main{
 					{
 						sb.append(average+"|");
 					}
+					else if(item.toString().toLowerCase().contains("count(*)"))
+					{
+						sb.append(countAll+"|");
+					}
 					else if(item.getName().equalsIgnoreCase("COUNT"))
 					{
 						sb.append(countNonNull+"|");
-					}
-					else if(item.getName().equalsIgnoreCase(countsAll))
-					{
-						sb.append(countAll+"|");
 					}
 					else if(item.getName().equalsIgnoreCase("Min"))
 					{
