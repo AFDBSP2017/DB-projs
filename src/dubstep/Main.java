@@ -232,32 +232,36 @@ public class Main{
 					{
 						if (is_aggregate ==false)
 						{
-							for(int i=0;i<SelectStatements.size()-1;i++)
+							for(int i=0;i<SelectStatements.size();i++)
 							{
 								PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
 								sb.append(result+"|");
-								}
+						}
 						
-						
-						PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
-						sb.append(result+"\n");
+						if(sb.length() >=1)
+						{
+							sb.setLength(sb.length() - 1);
+							sb.append("\n");
+						}
+						//PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
+						//sb.append(result+"\n");
 						}
 						else
 						{
 							//System.out.println("Else  "+ selectlist.size());
 							PrimitiveValue result = null;
-							for(int i =0; i<selectlist.size()-1;i++)
+							for(int i =0; i<selectlist.size();i++)
 							{
 								Function item = selectlist.get(i);
-								System.out.println("Else  "+ item);
+								//System.out.println("Else  "+ item);
 								if(item.getName().equals("SUM"))
 								{
 									Expression operand1 = (Expression) item.getParameters().getExpressions().get(0);
 									Expression operand2 = (Expression) item.getParameters().getExpressions().get(1);
 									System.out.println("operand1 :  "+ operand1);
 									System.out.println("operand2 :  "+ operand2);
-									result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
-									System.out.println(result);
+									//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+									//System.out.println(result);
 								}
 								else if(item.getName().equals("AVG"))
 								{
@@ -268,21 +272,21 @@ public class Main{
 								else if(item.getName().equals("COUNT"))
 								{
 									System.out.println(item);
-									result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+									//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
 									//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 									//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
 								}
 								else if(item.getName().equals("MIN"))
 								{
 									System.out.println(item);
-									result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+									//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
 									//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 									//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
 								}
 								else if(item.getName().equals("MAX"))
 								{
 									System.out.println(item);
-									result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+									//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
 									Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 									//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
 								}
@@ -295,12 +299,17 @@ public class Main{
 								}
 								else
 								{
-									result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+									//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
 								}
 								sb.append(result+"|");
 							}
-							result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
-							sb.append(result+"\n");
+							if(sb.length() >=1)
+							{
+								sb.setLength(sb.length() - 1);
+								sb.append("\n");
+							}
+							//result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
+							//sb.append(result+"\n");
 						}
 					}
 				}
@@ -308,32 +317,36 @@ public class Main{
 					
 					if (is_aggregate ==false)
 					{
-						for(int i=0;i<SelectStatements.size()-1;i++)
+						for(int i=0;i<SelectStatements.size();i++)
 						{
 							PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
 							sb.append(result+"|");
 						}
 					
-					
-					PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
-					sb.append(result+"\n");
+					if(sb.length() >=1)
+					{
+						sb.setLength(sb.length() - 1);
+						sb.append("\n");
+					}
+					//PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
+					//sb.append(result+"\n");
 					}
 					else
 					{
 						//System.out.println("Else  "+ selectlist.size());
 						PrimitiveValue result = null;
-						for(int i =0; i<selectlist.size()-1;i++)
+						for(int i =0; i<selectlist.size();i++)
 						{
 							Function item = selectlist.get(i);
-							System.out.println("Else  "+ item);
+							//System.out.println("Else  "+ item);
 							if(item.getName().equals("SUM"))
 							{
 								Expression operand1 = (Expression) item.getParameters().getExpressions().get(0);
 								Expression operand2 = (Expression) item.getParameters().getExpressions().get(1);
 								System.out.println("operand1 :  "+ operand1);
 								System.out.println("operand2 :  "+ operand2);
-								result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
-								System.out.println(result);
+								//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+								//System.out.println(result);
 							}
 							else if(item.getName().equals("AVG"))
 							{
@@ -344,21 +357,21 @@ public class Main{
 							else if(item.getName().equals("COUNT"))
 							{
 								System.out.println(item);
-								result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+								//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
 								//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 								//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
 							}
 							else if(item.getName().equals("MIN"))
 							{
 								System.out.println(item);
-								result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+								//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
 								//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 								//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
 							}
 							else if(item.getName().equals("MAX"))
 							{
 								System.out.println(item);
-								result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+								//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
 								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 								//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
 							}
@@ -371,12 +384,17 @@ public class Main{
 							}
 							else
 							{
-								result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+								//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
 							}
 							sb.append(result+"|");
 						}
-						result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
-						sb.append(result+"\n");
+						if(sb.length() >=1)
+						{
+							sb.setLength(sb.length() - 1);
+							sb.append("\n");
+						}
+						//result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
+						//sb.append(result+"\n");
 					}
 				}
 
