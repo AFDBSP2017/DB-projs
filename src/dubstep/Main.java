@@ -200,17 +200,19 @@ public class Main{
 			Reader in = new FileReader(file);
 						CSVParser parser = new CSVParser(in, CSVFormat.EXCEL.withHeader(tblschema.getHeaders()).withDelimiter('|'));
 			*/
-			List<SelectItem> allSelectStatements = plain.getSelectItems();
+			List<SelectItem> SelectStatements = plain.getSelectItems();
 			ArrayList <Function> selectlist = new ArrayList<Function>();
-			
-			for(SelectItem select: allSelectStatements)
+			boolean is_aggregate=false;
+			for(SelectItem select: SelectStatements)
 			{
 				Expression expression = ((SelectExpressionItem)select).getExpression();
 				if(expression instanceof Function)
 				{
+						is_aggregate = true;
 						selectlist.add((Function) expression);
 				}
 			}
+			
 			
 			for(Function item : selectlist)
 			{
@@ -222,7 +224,7 @@ public class Main{
 					Expression operand2 = (Expression) item.getParameters().getExpressions().get(1);
 					System.out.println("operand1 :  "+ operand1);
 					System.out.println("operand2 :  "+ operand2);
-					//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
+					//
 				}
 				else if(item.getName().equals("AVG"))
 				{
@@ -253,33 +255,46 @@ public class Main{
 					Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 					//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
 				}
+				else
+				{
+					
+				}
 			}
 			
 			while ((line = br.readLine()) != null) {
 				//System.out.println("Debug: "+line);
 				String Line1 = line.replace("|", "| ");
 				rowData = Line1.split("\\|");
+				
 				if(plain.getWhere()!=null){
 					pv = e.eval(whereExpression);
 					if(pv.toBool()){
-						for(int i=0;i<allSelectStatements.size()-1;i++)
+						if (is_aggregate ==false)
 						{
-							sb.append(rowData[columnNameToIndexMapping.get(tableName).get(allSelectStatements.get(i).toString())].trim()+"|");
+							for(int i=0;i<SelectStatements.size()-1;i++)
+							{
+								sb.append(rowData[columnNameToIndexMapping.get(tableName).get(SelectStatements.get(i).toString())].trim()+"|");
+								PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+							}
+						
+						
+						PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
+						sb.append(rowData[columnNameToIndexMapping.get(tableName).get(SelectStatements.get(SelectStatements.size()-1).toString())].trim()+"\n");
 						}
-
-						sb.append(rowData[columnNameToIndexMapping.get(tableName).get(allSelectStatements.get(allSelectStatements.size()-1).toString())].trim()+"\n");
 					}
 				}
 				else{
-					for(int i=0;i<allSelectStatements.size()-1;i++)
+					if (is_aggregate ==false)
 					{
-						sb.append(rowData[columnNameToIndexMapping.get(tableName).get(allSelectStatements.get(i).toString())].trim()+"|");
+						for(int i=0;i<SelectStatements.size()-1;i++)
+						{
+							sb.append(rowData[columnNameToIndexMapping.get(tableName).get(SelectStatements.get(i).toString())].trim()+"|");
+							PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+						}
+						
+						PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
+						sb.append(rowData[columnNameToIndexMapping.get(tableName).get(SelectStatements.get(SelectStatements.size()-1).toString())].trim()+"\n");
 					}
-					
-					//System.out.println("x  :"+rowData.length);
-
-					sb.append(rowData[columnNameToIndexMapping.get(tableName).get(allSelectStatements.get(allSelectStatements.size()-1).toString())].trim()+"\n");
-					
 				}
 
 			}
