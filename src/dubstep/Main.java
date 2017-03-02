@@ -83,7 +83,10 @@ public class Main{
 			{
 				return new DateValue(rowData[index].trim());
 			}
-			return null;
+			else
+			{
+				return new StringValue(rowData[index].trim());
+			}
 
 		}
 
@@ -205,6 +208,7 @@ public class Main{
 			boolean is_aggregate=false;
 			for(SelectItem select: SelectStatements)
 			{
+				System.out.println(select);
 				Expression expression = ((SelectExpressionItem)select).getExpression();
 				if(expression instanceof Function)
 				{
@@ -214,86 +218,165 @@ public class Main{
 			}
 			
 			
-			for(Function item : selectlist)
-			{
-				
-				System.out.println(item);
-				if(item.getName().equals("SUM"))
-				{
-					Expression operand1 = (Expression) item.getParameters().getExpressions().get(0);
-					Expression operand2 = (Expression) item.getParameters().getExpressions().get(1);
-					System.out.println("operand1 :  "+ operand1);
-					System.out.println("operand2 :  "+ operand2);
-					//
-				}
-				else if(item.getName().equals("AVG"))
-				{
-					System.out.println(item);
-
-				}
-				else if(item.getName().equals("COUNT"))
-				{
-					System.out.println(item);
-					Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-					//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
-				}
-				else if(item.getName().equals("MIN"))
-				{
-					System.out.println(item);
-					Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-					//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
-				}
-				else if(item.getName().equals("MAX"))
-				{
-					System.out.println(item);
-					Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-					//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
-				}
-				else if(item.getName().equals("MAX"))
-				{
-					System.out.println(item);
-					Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-					//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
-				}
-				else
-				{
-					
-				}
-			}
+			System.out.println("is_aggregate = " + is_aggregate);
 			
 			while ((line = br.readLine()) != null) {
 				//System.out.println("Debug: "+line);
 				String Line1 = line.replace("|", "| ");
 				rowData = Line1.split("\\|");
 				
-				if(plain.getWhere()!=null){
+				if(plain.getWhere()!=null)
+				{
 					pv = e.eval(whereExpression);
-					if(pv.toBool()){
+					if(pv.toBool())
+					{
 						if (is_aggregate ==false)
 						{
 							for(int i=0;i<SelectStatements.size()-1;i++)
 							{
-								sb.append(rowData[columnNameToIndexMapping.get(tableName).get(SelectStatements.get(i).toString())].trim()+"|");
 								PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
-							}
+								sb.append(result+"|");
+								}
 						
 						
 						PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
-						sb.append(rowData[columnNameToIndexMapping.get(tableName).get(SelectStatements.get(SelectStatements.size()-1).toString())].trim()+"\n");
+						sb.append(result+"\n");
+						}
+						else
+						{
+							//System.out.println("Else  "+ selectlist.size());
+							PrimitiveValue result = null;
+							for(int i =0; i<selectlist.size()-1;i++)
+							{
+								Function item = selectlist.get(i);
+								System.out.println("Else  "+ item);
+								if(item.getName().equals("SUM"))
+								{
+									Expression operand1 = (Expression) item.getParameters().getExpressions().get(0);
+									Expression operand2 = (Expression) item.getParameters().getExpressions().get(1);
+									System.out.println("operand1 :  "+ operand1);
+									System.out.println("operand2 :  "+ operand2);
+									result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+									System.out.println(result);
+								}
+								else if(item.getName().equals("AVG"))
+								{
+									System.out.println(item);
+
+								}
+								
+								else if(item.getName().equals("COUNT"))
+								{
+									System.out.println(item);
+									result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+									//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+									//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
+								}
+								else if(item.getName().equals("MIN"))
+								{
+									System.out.println(item);
+									result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+									//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+									//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
+								}
+								else if(item.getName().equals("MAX"))
+								{
+									System.out.println(item);
+									result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+									Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+									//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
+								}
+								else if(item.getName().equals("MAX"))
+								{
+									System.out.println(item);
+									result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+									Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+									//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
+								}
+								else
+								{
+									result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+								}
+								sb.append(result+"|");
+							}
+							result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
+							sb.append(result+"\n");
 						}
 					}
 				}
 				else{
+					
 					if (is_aggregate ==false)
 					{
 						for(int i=0;i<SelectStatements.size()-1;i++)
 						{
-							sb.append(rowData[columnNameToIndexMapping.get(tableName).get(SelectStatements.get(i).toString())].trim()+"|");
 							PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+							sb.append(result+"|");
 						}
-						
-						PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
-						sb.append(rowData[columnNameToIndexMapping.get(tableName).get(SelectStatements.get(SelectStatements.size()-1).toString())].trim()+"\n");
+					
+					
+					PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
+					sb.append(result+"\n");
+					}
+					else
+					{
+						//System.out.println("Else  "+ selectlist.size());
+						PrimitiveValue result = null;
+						for(int i =0; i<selectlist.size()-1;i++)
+						{
+							Function item = selectlist.get(i);
+							System.out.println("Else  "+ item);
+							if(item.getName().equals("SUM"))
+							{
+								Expression operand1 = (Expression) item.getParameters().getExpressions().get(0);
+								Expression operand2 = (Expression) item.getParameters().getExpressions().get(1);
+								System.out.println("operand1 :  "+ operand1);
+								System.out.println("operand2 :  "+ operand2);
+								result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+								System.out.println(result);
+							}
+							else if(item.getName().equals("AVG"))
+							{
+								System.out.println(item);
+
+							}
+							
+							else if(item.getName().equals("COUNT"))
+							{
+								System.out.println(item);
+								result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+								//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+								//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
+							}
+							else if(item.getName().equals("MIN"))
+							{
+								System.out.println(item);
+								result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+								//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+								//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
+							}
+							else if(item.getName().equals("MAX"))
+							{
+								System.out.println(item);
+								result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+								//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
+							}
+							else if(item.getName().equals("MAX"))
+							{
+								System.out.println(item);
+								result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+								//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
+							}
+							else
+							{
+								result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+							}
+							sb.append(result+"|");
+						}
+						result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
+						sb.append(result+"\n");
 					}
 				}
 
