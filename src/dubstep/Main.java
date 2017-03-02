@@ -200,7 +200,6 @@ public class Main{
 
 
 			//System.out.println("is_aggregate = " + is_aggregate);
-			PrimitiveValue eval_result = null;
 			PrimitiveValue Max = null;
 			PrimitiveValue Min = null;
 			int countAll =0;
@@ -240,20 +239,31 @@ public class Main{
 						for(int i =0; i<selectlist.size();i++)
 						{
 							Function item = selectlist.get(i);
+							
 							if(item.getName().equalsIgnoreCase("SUM"))
 							{
 								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 								PrimitiveValue result = e.eval(operand);
-								sum+=result.toDouble();
-								
+								if(result!=null)
+								{
+									sum+=result.toDouble();
+								}
+							
 							}
 							else if(item.getName().equalsIgnoreCase("AVG"))
 							{
 								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-								PrimitiveValue result = e.eval(operand);
-								total += result.toDouble();
-								row_count++;
-								average=total/row_count;
+								int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+								String temp =(rowData[index].trim());
+								if(temp.length() != 0)
+								{
+									PrimitiveValue result = e.eval(operand);
+									if(result!=null)
+									{
+										total += result.toDouble();
+										row_count++;
+									}
+								}
 							}
 							else if(item.toString().toLowerCase().contains("count(*)"))
 							{
@@ -266,8 +276,8 @@ public class Main{
 								String temp =(rowData[index].trim());
 								if(temp.length() != 0)
 								{
-									eval_result = e.eval(operand);
-									if(eval_result!=null)
+									PrimitiveValue result = e.eval(operand);
+									if(result!=null)
 									{
 										countNonNull++;
 									}
@@ -276,28 +286,31 @@ public class Main{
 							else if(item.getName().equalsIgnoreCase("MIN"))
 							{
 								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-								eval_result = e.eval(operand);
+								int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+								PrimitiveValue result = e.eval(operand);
 								if(Min==null)
 								{
-									Min = eval_result;
+									Min = result;
 								}
-								else if(eval_result.toDouble() < Min.toDouble())
+								else if(result.toDouble() < Min.toDouble())
 								{
-									Min = eval_result;
+									Min = result;
 								}
 							}
 							else if(item.getName().equalsIgnoreCase("MAX"))
 							{
 								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-								eval_result = e.eval(operand);
+								int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+								String temp =(rowData[index].trim());
+								PrimitiveValue result = e.eval(operand);
 								if(Max==null)
 								{
-									Max = eval_result;
+									Max = result;
 								}
 
-								else if(eval_result.toDouble() > Max.toDouble())
+								else if(result.toDouble() > Max.toDouble())
 								{
-									Max = eval_result;
+									Max = result;
 								}
 							}	
 						}
@@ -315,6 +328,7 @@ public class Main{
 					}
 					else if(item.getName().equalsIgnoreCase("AVG"))
 					{
+						average=total/row_count;
 						sb.append(average+"|");
 					}
 					else if(item.toString().toLowerCase().contains("count(*)"))
