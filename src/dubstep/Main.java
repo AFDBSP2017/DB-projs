@@ -208,23 +208,24 @@ public class Main{
 				if(plain.getWhere()!=null){
 					pv = e.eval(ex);
 					if(pv.toBool()){
-						for(int i=0;i<columnsToFetch.get(tableName).length-1;i++)
+						for(int i=0;i<selectclauses.size()-1;i++)
 						{
-							sb.append(rowData[columnsToFetch.get(tableName)[i]].trim()+"|");
+							sb.append(rowData[columnNameToIndexMapping.get(tableName).get(selectclauses.get(i).toString())].trim()+"|");
 						}
 
-						sb.append(rowData[columnsToFetch.get(tableName)[columnsToFetch.get(tableName).length-1]].trim()+"\n");
+						sb.append(rowData[columnNameToIndexMapping.get(tableName).get(selectclauses.get(selectclauses.size()-1).toString())].trim()+"\n");
 					}
 				}
 				else{
-					for(int i=0;i<columnsToFetch.get(tableName).length-1;i++)
+					for(int i=0;i<selectclauses.size()-1;i++)
 					{
-						sb.append(rowData[columnsToFetch.get(tableName)[i]].trim()+"|");
+						sb.append(rowData[columnNameToIndexMapping.get(tableName).get(selectclauses.get(i).toString())].trim()+"|");
 					}
 					
 					//System.out.println("x  :"+rowData.length);
 
-					sb.append(rowData[columnsToFetch.get(tableName)[columnsToFetch.get(tableName).length-1]].trim()+"\n");
+					sb.append(rowData[columnNameToIndexMapping.get(tableName).get(selectclauses.get(selectclauses.size()-1).toString())].trim()+"\n");
+					
 				}
 				
 				
