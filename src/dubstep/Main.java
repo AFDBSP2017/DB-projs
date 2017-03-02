@@ -208,9 +208,7 @@ public class Main{
 				Expression expression = ((SelectExpressionItem)select).getExpression();
 				if(expression instanceof Function)
 				{
-						Function exp =(Function)expression;
-						selectlist.add(exp);				
-
+						selectlist.add((Function) expression);
 				}
 			}
 			
