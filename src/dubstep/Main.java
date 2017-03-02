@@ -26,6 +26,7 @@ import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SelectBody;
 import net.sf.jsqlparser.statement.select.SelectExpressionItem;
 import net.sf.jsqlparser.statement.select.SelectItem;
+import net.sf.jsqlparser.eval.*;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -76,7 +77,8 @@ public class Main{
 	static String[] rowData = null;
 	//public enum columndDataTypess  {String,varchar,Char,Int,decimal,date}; 
 	public static BufferedReader br = null;
-	public static String csvFile = "src\\dubstep\\data\\";
+	//public static String csvFile = "src\\dubstep\\data\\";
+	public static String csvFile = "data/";
 	public static String line = "";
 	public static Statement statement;
 	public static Scanner scan;
