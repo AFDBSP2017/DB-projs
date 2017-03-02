@@ -3,36 +3,20 @@ import java.io.StringReader;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.Stack;
-
-import javax.management.monitor.CounterMonitor;
-
-import net.sf.jsqlparser.eval.*;
-import net.sf.jsqlparser.expression.BinaryExpression;
 import net.sf.jsqlparser.expression.DateValue;
 import net.sf.jsqlparser.expression.DoubleValue;
 import net.sf.jsqlparser.expression.Expression;
-import net.sf.jsqlparser.expression.ExpressionVisitor;
-import net.sf.jsqlparser.expression.ExpressionVisitorBase;
 import net.sf.jsqlparser.expression.Function;
 import net.sf.jsqlparser.expression.LongValue;
 import net.sf.jsqlparser.expression.PrimitiveValue;
 import net.sf.jsqlparser.expression.StringValue;
-import net.sf.jsqlparser.expression.operators.arithmetic.Addition;
-import net.sf.jsqlparser.expression.operators.arithmetic.Multiplication;
-import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
-import net.sf.jsqlparser.expression.operators.conditional.OrExpression;
-import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
-import net.sf.jsqlparser.expression.operators.relational.GreaterThan;
 import net.sf.jsqlparser.parser.CCJSqlParser;
 import net.sf.jsqlparser.parser.ParseException;
 import net.sf.jsqlparser.schema.Column;
-import net.sf.jsqlparser.schema.PrimitiveType;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
@@ -45,8 +29,6 @@ import net.sf.jsqlparser.statement.select.SelectItem;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
-
-
 
 
 public class Main{
@@ -89,9 +71,7 @@ public class Main{
 			{
 				return new StringValue(rowData[index].trim());
 			}
-
 		}
-
 	}
 	static String[] rowData = null;
 	//public enum columndDataTypess  {String,varchar,Char,Int,decimal,date}; 
@@ -130,11 +110,7 @@ public class Main{
 			System.out.print("$>");
 		}
 		scan.close();
-
-
 	}
-
-
 
 
 	public static void parseQueries() throws Exception
@@ -149,7 +125,6 @@ public class Main{
 			else if(statement instanceof Select)
 			{
 
-				//System.out.println("statement = "+statement);
 				parseSelectStatement();     
 			} 
 			else 
@@ -224,15 +199,22 @@ public class Main{
 			PrimitiveValue eval_result = null;
 			PrimitiveValue Max = null;
 			PrimitiveValue Min = null;
-			int Count =0;
-
+			int countAll =0;
+			int countNonNull =0;
+			double total=0;
+			double sum=0;
+			int row_count=0;
+			double average=0;
+			String countsAll = "count"+ '('+'*'+')';
+			//System.out.println(count_all);
+			
+			boolean whereclauseabsent = (plain.getWhere()==null)?true:false;
+			
 			while ((line = br.readLine()) != null) 
 			{
 				//System.out.println("Debug: "+line);
 				String Line1 = line.replace("|", "| ");
 				rowData = Line1.split("\\|");
-
-				boolean whereclauseabsent = (plain.getWhere()==null)?true:false;
 
 				if(whereclauseabsent || e.eval(whereExpression).toBool())
 				{
@@ -257,23 +239,22 @@ public class Main{
 						for(int i =0; i<selectlist.size();i++)
 						{
 							Function item = selectlist.get(i);
+							System.out.println(item);
 							//System.out.println("Else  "+ item);
 							if(item.getName().equals("SUM"))
 							{
-								Expression operand1 = (Expression) item.getParameters().getExpressions().get(0);
-								Expression operand2 = (Expression) item.getParameters().getExpressions().get(1);
-								System.out.println("operand1 :  "+ operand1);
-								System.out.println("operand2 :  "+ operand2);
-								PrimitiveValue value1 = e.eval(operand1);
-								PrimitiveValue value2 = e.eval(operand2);
-								//TODO: 
-								//
-								//PrimitiveValue result = e.eval(operand1+operand2);
-								//sb.append(result+"|");
+								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+								PrimitiveValue result = e.eval(operand);
+								sum+=result.toDouble();
+								
 							}
 							else if(item.getName().equals("AVG"))
 							{
 								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+								PrimitiveValue result = e.eval(operand);
+								total += result.toDouble();
+								row_count++;
+								average=total/row_count;
 							}
 							else if(item.getName().equals("COUNT"))
 							{
@@ -281,12 +262,13 @@ public class Main{
 								eval_result = e.eval(operand);
 								if(eval_result!=null)
 								{
-									Count++;
+									countNonNull++;
 								}
 							}
-							else if(item.getName().equals("COUNT(*)"))
+							else if(item.getName().equals(countsAll))
 							{
-								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+								System.out.println("sdfsdf  "+item);
+								countAll++;
 							}
 							else if(item.getName().equals("MIN"))
 							{
@@ -318,10 +300,44 @@ public class Main{
 						}
 					}
 				}
-
+			}
+			if(is_aggregate==true)
+			{
+				for(int i =0; i<selectlist.size();i++)
+				{
+					Function item = selectlist.get(i);
+					if(item.getName().equals("SUM"))
+					{
+						sb.append(sum+"|");
+					}
+					else if(item.getName().equals("AVG"))
+					{
+						sb.append(average+"|");
+					}
+					else if(item.getName().equals("COUNT"))
+					{
+						sb.append(countNonNull+"|");
+					}
+					else if(item.getName().equals(countsAll))
+					{
+						sb.append(countAll+"|");
+					}
+					else if(item.getName().equals("MIN"))
+					{
+						sb.append(Min+"|");
+					}
+					else if(item.getName().equals("MAX"))
+					{
+						sb.append(Max+"|");
+					}
+				}
+			}
+			if(sb.length() >=2)
+			{
+				sb.setLength(sb.length() - 1);
+				sb.append("\n");
 			}
 			System.out.print(sb.toString());
-
 		}
 		catch(SQLException e){
 			System.out.println(e.getMessage());
@@ -360,18 +376,6 @@ public class Main{
 		StringReader input = new StringReader(temp);
 		parser = new CCJSqlParser(input);
 		statement = parser.Statement();  
-
 	}
 
-}
-
-class WhereCondition{
-	String var1 = "";
-	String var2 = "";
-	String operator="";
-	public WhereCondition(String var1,String var2,String operator){
-		this.var1 = var1;
-		this.var2 = var2;
-		this.operator=operator;
-	}
 }
