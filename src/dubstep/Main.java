@@ -172,7 +172,7 @@ public class Main{
 			plain = (PlainSelect)body;
 			Table table = (Table) plain.getFromItem();
 			String tableName = table.getName();
-			getSelectiveColumnsAsPerSelectStatement(tableName, plain.getWhere());
+			getSelectedColumns(tableName, plain.getWhere());
 
 		}
 
@@ -184,7 +184,7 @@ public class Main{
 	}
 
 
-	public static void getSelectiveColumnsAsPerSelectStatement(String tableName, Expression whereExpression) throws IOException
+	public static void getSelectedColumns(String tableName, Expression whereExpression) throws IOException
 	{
 		try{
 			//Table table = (Table) plain.getFromItem();
@@ -208,7 +208,7 @@ public class Main{
 			boolean is_aggregate=false;
 			for(SelectItem select: SelectStatements)
 			{
-				System.out.println(select);
+				//System.out.println(select);
 				Expression expression = ((SelectExpressionItem)select).getExpression();
 				if(expression instanceof Function)
 				{
@@ -248,59 +248,46 @@ public class Main{
 						}
 						else
 						{
-							//System.out.println("Else  "+ selectlist.size());
-							PrimitiveValue result = null;
+							String result = null;
+							int MAX = Integer.MIN_VALUE;
+							int Min = Integer.MIN_VALUE;
 							for(int i =0; i<selectlist.size();i++)
 							{
 								Function item = selectlist.get(i);
-								//System.out.println("Else  "+ item);
+								System.out.println("Else  "+ item);
 								if(item.getName().equals("SUM"))
 								{
 									Expression operand1 = (Expression) item.getParameters().getExpressions().get(0);
 									Expression operand2 = (Expression) item.getParameters().getExpressions().get(1);
 									System.out.println("operand1 :  "+ operand1);
 									System.out.println("operand2 :  "+ operand2);
-									//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
-									//System.out.println(result);
 								}
 								else if(item.getName().equals("AVG"))
 								{
-									System.out.println(item);
-
+									Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 								}
-								
 								else if(item.getName().equals("COUNT"))
 								{
-									System.out.println(item);
-									//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
-									//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-									//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
+									Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+								}
+								else if(item.getName().equals("COUNT(*)"))
+								{
+									Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 								}
 								else if(item.getName().equals("MIN"))
 								{
-									System.out.println(item);
-									//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
-									//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-									//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
+									Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+									int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+									
+									//columnDataTypes.get(tableName).get(index)
+
 								}
 								else if(item.getName().equals("MAX"))
 								{
-									System.out.println(item);
-									//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
 									Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 									//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
 								}
-								else if(item.getName().equals("MAX"))
-								{
-									System.out.println(item);
-									result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
-									Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-									//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
-								}
-								else
-								{
-									//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
-								}
+
 								sb.append(result+"|");
 							}
 							if(sb.length() >=1)
@@ -323,70 +310,75 @@ public class Main{
 							sb.append(result+"|");
 						}
 					
-					if(sb.length() >=1)
-					{
-						sb.setLength(sb.length() - 1);
-						sb.append("\n");
-					}
-					//PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
-					//sb.append(result+"\n");
+						if(sb.length() >=1)
+						{
+							sb.setLength(sb.length() - 1);
+							sb.append("\n");
+						}
+						//PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
+						//sb.append(result+"\n");
 					}
 					else
 					{
-						//System.out.println("Else  "+ selectlist.size());
 						PrimitiveValue result = null;
+						PrimitiveValue MAX = null;
+						PrimitiveValue Min = null;
+						int Count =0;
 						for(int i =0; i<selectlist.size();i++)
 						{
 							Function item = selectlist.get(i);
-							//System.out.println("Else  "+ item);
+							System.out.println("Else  "+ item);
 							if(item.getName().equals("SUM"))
 							{
 								Expression operand1 = (Expression) item.getParameters().getExpressions().get(0);
 								Expression operand2 = (Expression) item.getParameters().getExpressions().get(1);
 								System.out.println("operand1 :  "+ operand1);
 								System.out.println("operand2 :  "+ operand2);
-								//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
-								//System.out.println(result);
 							}
 							else if(item.getName().equals("AVG"))
 							{
-								System.out.println(item);
-
+								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 							}
-							
 							else if(item.getName().equals("COUNT"))
 							{
-								System.out.println(item);
-								//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
-								//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-								//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
+								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+								result = e.eval(operand);
+								if(result!=null)
+								{
+									Count++;
+								}
+								sb.append(Count+"|");
+								
+							}
+							else if(item.getName().equals("COUNT(*)"))
+							{
+								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 							}
 							else if(item.getName().equals("MIN"))
 							{
-								System.out.println(item);
-								//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
-								//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-								//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
+								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+								int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+								
+								//columnDataTypes.get(tableName).get(index)
+
 							}
 							else if(item.getName().equals("MAX"))
 							{
-								System.out.println(item);
-								//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
 								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-								//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
+								result = e.eval(operand);
+								if(MAX==null)
+								{
+									MAX = result;
+								}
+								/*
+								else if(result.)
+								{
+									MAX = result;
+								}
+								*/
 							}
-							else if(item.getName().equals("MAX"))
-							{
-								System.out.println(item);
-								result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
-								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-								//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
-							}
-							else
-							{
-								//result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
-							}
-							sb.append(result+"|");
+
+							
 						}
 						if(sb.length() >=1)
 						{
