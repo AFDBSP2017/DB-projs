@@ -195,7 +195,7 @@ public class Main{
 			}
 
 
-			System.out.println("is_aggregate = " + is_aggregate);
+			//System.out.println("is_aggregate = " + is_aggregate);
 			PrimitiveValue eval_result = null;
 			PrimitiveValue Max = null;
 			PrimitiveValue Min = null;
@@ -205,7 +205,7 @@ public class Main{
 			double sum=0;
 			int row_count=0;
 			double average=0;
-			String countsAll = "count"+ '('+'*'+')';
+			String countsAll = "COUNT"+ '('+'*'+')';
 			//System.out.println(count_all);
 			
 			boolean whereclauseabsent = (plain.getWhere()==null)?true:false;
@@ -215,7 +215,6 @@ public class Main{
 				//System.out.println("Debug: "+line);
 				String Line1 = line.replace("|", "| ");
 				rowData = Line1.split("\\|");
-
 				if(whereclauseabsent || e.eval(whereExpression).toBool())
 				{
 					if (is_aggregate ==false)
@@ -239,16 +238,14 @@ public class Main{
 						for(int i =0; i<selectlist.size();i++)
 						{
 							Function item = selectlist.get(i);
-							System.out.println(item);
-							//System.out.println("Else  "+ item);
-							if(item.getName().equals("SUM"))
+							if(item.getName().equalsIgnoreCase("SUM"))
 							{
 								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 								PrimitiveValue result = e.eval(operand);
 								sum+=result.toDouble();
 								
 							}
-							else if(item.getName().equals("AVG"))
+							else if(item.getName().equalsIgnoreCase("AVG"))
 							{
 								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 								PrimitiveValue result = e.eval(operand);
@@ -256,21 +253,24 @@ public class Main{
 								row_count++;
 								average=total/row_count;
 							}
-							else if(item.getName().equals("COUNT"))
+							else if(item.getName().equalsIgnoreCase("count(*)"))
 							{
-								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-								eval_result = e.eval(operand);
-								if(eval_result!=null)
-								{
-									countNonNull++;
-								}
-							}
-							else if(item.getName().equals(countsAll))
-							{
-								System.out.println("sdfsdf  "+item);
 								countAll++;
 							}
-							else if(item.getName().equals("MIN"))
+							else if(item.getName().equalsIgnoreCase("COUNT"))
+							{
+								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+								System.out.println(operand);
+								if(operand != null)
+								{
+									eval_result = e.eval(operand);
+									if(eval_result!=null)
+									{
+										countNonNull++;
+									}
+								}
+							}
+							else if(item.getName().equalsIgnoreCase("MIN"))
 							{
 								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 								eval_result = e.eval(operand);
@@ -283,7 +283,7 @@ public class Main{
 									Min = eval_result;
 								}
 							}
-							else if(item.getName().equals("MAX"))
+							else if(item.getName().equalsIgnoreCase("MAX"))
 							{
 								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 								eval_result = e.eval(operand);
@@ -306,27 +306,27 @@ public class Main{
 				for(int i =0; i<selectlist.size();i++)
 				{
 					Function item = selectlist.get(i);
-					if(item.getName().equals("SUM"))
+					if(item.getName().equalsIgnoreCase("SUM"))
 					{
 						sb.append(sum+"|");
 					}
-					else if(item.getName().equals("AVG"))
+					else if(item.getName().equalsIgnoreCase("AVG"))
 					{
 						sb.append(average+"|");
 					}
-					else if(item.getName().equals("COUNT"))
+					else if(item.getName().equalsIgnoreCase("COUNT"))
 					{
 						sb.append(countNonNull+"|");
 					}
-					else if(item.getName().equals(countsAll))
+					else if(item.getName().equalsIgnoreCase(countsAll))
 					{
 						sb.append(countAll+"|");
 					}
-					else if(item.getName().equals("MIN"))
+					else if(item.getName().equalsIgnoreCase("Min"))
 					{
 						sb.append(Min+"|");
 					}
-					else if(item.getName().equals("MAX"))
+					else if(item.getName().equalsIgnoreCase("Max"))
 					{
 						sb.append(Max+"|");
 					}
