@@ -17,6 +17,7 @@ import net.sf.jsqlparser.expression.DoubleValue;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.ExpressionVisitor;
 import net.sf.jsqlparser.expression.ExpressionVisitorBase;
+import net.sf.jsqlparser.expression.Function;
 import net.sf.jsqlparser.expression.LongValue;
 import net.sf.jsqlparser.expression.PrimitiveValue;
 import net.sf.jsqlparser.expression.StringValue;
@@ -37,6 +38,7 @@ import net.sf.jsqlparser.statement.create.table.CreateTable;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SelectBody;
+import net.sf.jsqlparser.statement.select.SelectExpressionItem;
 import net.sf.jsqlparser.statement.select.SelectItem;
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -179,7 +181,7 @@ public class Main{
 	}
 
 
-	public static void getSelectiveColumnsAsPerSelectStatement(String tableName, Expression ex) throws IOException
+	public static void getSelectiveColumnsAsPerSelectStatement(String tableName, Expression whereExpression) throws IOException
 	{
 		try{
 			//Table table = (Table) plain.getFromItem();
@@ -190,14 +192,32 @@ public class Main{
 			EvalLib e = new EvalLib(tableName);
 			PrimitiveValue pv = null;
 
+			/*
+			import org.apache.commons.csv.CSVFormat;
+			import org.apache.commons.csv.CSVParser;
+			import org.apache.commons.csv.CSVRecord;
+
+			Reader in = new FileReader(file);
+						CSVParser parser = new CSVParser(in, CSVFormat.EXCEL.withHeader(tblschema.getHeaders()).withDelimiter('|'));
+			*/
 			List<SelectItem> selectclauses = plain.getSelectItems();
-			ArrayList <String> funclist = new ArrayList<String>();
+			ArrayList <Function> funclist = new ArrayList<Function>();
 			
 			for(SelectItem selectclause: selectclauses)
 			{
-				System.out.println(selectclause);
-			//funclist.add((Function)((SelectExpressionItem)selectclause).getExpression());
+				Expression expression = ((SelectExpressionItem)selectclause).getExpression();
+				if(expression instanceof Function)
+				{
+						Function y =(Function)expression;
+						funclist.add(y);
+						//System.out.println(y);
+						Expression expr = (Expression) y.getParameters().getExpressions().get(0);
+						System.out.println(expr);
+				//http://www.programcreek.com/java-api-examples/index.php?api=net.sf.jsqlparser.statement.select.SelectExpressionItem
+				//funcEval.getParameters().getExpressions().get(0)
+			//
 			//PrimitiveValue temp = e.eval(funcEval.getParameters().getExpressions().get(0));
+				}
 			}
 			
 			
@@ -206,7 +226,7 @@ public class Main{
 				String Line1 = line.replace("|", "| ");
 				rowData = Line1.split("\\|");
 				if(plain.getWhere()!=null){
-					pv = e.eval(ex);
+					pv = e.eval(whereExpression);
 					if(pv.toBool()){
 						for(int i=0;i<selectclauses.size()-1;i++)
 						{
