@@ -287,14 +287,18 @@ public class Main{
 							{
 								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 								int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
-								PrimitiveValue result = e.eval(operand);
-								if(Min==null)
+								String temp =(rowData[index].trim());
+								if(temp.length() != 0)
 								{
-									Min = result;
-								}
-								else if(result.toDouble() < Min.toDouble())
-								{
-									Min = result;
+									PrimitiveValue result = e.eval(operand);
+									if(Min==null)
+									{
+										Min = result;
+									}
+									else if(result.toDouble() < Min.toDouble())
+									{
+										Min = result;
+									}
 								}
 							}
 							else if(item.getName().equalsIgnoreCase("MAX"))
@@ -302,15 +306,18 @@ public class Main{
 								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 								int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
 								String temp =(rowData[index].trim());
-								PrimitiveValue result = e.eval(operand);
-								if(Max==null)
+								if(temp.length() != 0)
 								{
-									Max = result;
-								}
-
-								else if(result.toDouble() > Max.toDouble())
-								{
-									Max = result;
+									PrimitiveValue result = e.eval(operand);
+									if(Max==null)
+									{
+										Max = result;
+									}
+	
+									else if(result.toDouble() > Max.toDouble())
+									{
+										Max = result;
+									}
 								}
 							}	
 						}
