@@ -201,25 +201,59 @@ public class Main{
 						CSVParser parser = new CSVParser(in, CSVFormat.EXCEL.withHeader(tblschema.getHeaders()).withDelimiter('|'));
 			*/
 			List<SelectItem> selectclauses = plain.getSelectItems();
-			ArrayList <Function> funclist = new ArrayList<Function>();
+			ArrayList <Function> selectlist = new ArrayList<Function>();
 			
 			for(SelectItem selectclause: selectclauses)
 			{
 				Expression expression = ((SelectExpressionItem)selectclause).getExpression();
 				if(expression instanceof Function)
 				{
-						Function y =(Function)expression;
-						funclist.add(y);
-						//System.out.println(y);
-						Expression expr = (Expression) y.getParameters().getExpressions().get(0);
-						System.out.println(expr);
-				//http://www.programcreek.com/java-api-examples/index.php?api=net.sf.jsqlparser.statement.select.SelectExpressionItem
-				//funcEval.getParameters().getExpressions().get(0)
-			//
-			//PrimitiveValue temp = e.eval(funcEval.getParameters().getExpressions().get(0));
+						Function exp =(Function)expression;
+						selectlist.add(exp);				
+
 				}
 			}
 			
+			for(Function item : selectlist)
+			{
+				
+				System.out.println(item);
+				if(item.getName().equals("SUM"))
+				{
+					Expression operand1 = (Expression) item.getParameters().getExpressions().get(0);
+					Expression operand2 = (Expression) item.getParameters().getExpressions().get(1);
+					//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
+				}
+				else if(item.getName().equals("AVG"))
+				{
+					System.out.println(item);
+
+				}
+				else if(item.getName().equals("COUNT"))
+				{
+					System.out.println(item);
+					Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+					//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
+				}
+				else if(item.getName().equals("MIN"))
+				{
+					System.out.println(item);
+					Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+					//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
+				}
+				else if(item.getName().equals("MAX"))
+				{
+					System.out.println(item);
+					Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+					//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
+				}
+				else if(item.getName().equals("MAX"))
+				{
+					System.out.println(item);
+					Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+					//PrimitiveValue temp = e.eval(item.getParameters().getExpressions().get(0));
+				}
+			}
 			
 			while ((line = br.readLine()) != null) {
 				//System.out.println("Debug: "+line);
