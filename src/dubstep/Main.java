@@ -1,3 +1,10 @@
+//create table R(A int, B String, C String, D int );Select SUM(A), SUM(D) From R;
+		//create table R(A int, B String, C String, D int ); select A,B,C,D from R
+		//create table R(A int, B String, C String, D int ); select A,B from R where A=1 and B=1;select * from R
+		//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (B=1 AND D =9)
+		//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (C>4 AND B=1 AND D =9)
+		//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (C>4 AND B=1) AND (B>2 OR D =9)
+
 package dubstep;
 import java.io.StringReader;
 import java.sql.SQLException;
@@ -95,13 +102,7 @@ public class Main{
 	public static void main(String[] args) throws Exception
 	{
 
-
-		//create table R(A int, B String, C String, D int ); select A,B,C,D from R
-		//create table R(A int, B String, C String, D int ); select A,B from R where A=1 and B=1;select * from R
-		//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (B=1 AND D =9)
-		//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (C>4 AND B=1 AND D =9)
-		//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (C>4 AND B=1) AND (B>2 OR D =9)
-
+		
 		System.out.print("$> ");
 		scan = new Scanner(System.in);
 		String temp;
@@ -184,10 +185,10 @@ public class Main{
 			Reader in = new FileReader(file);
 						CSVParser parser = new CSVParser(in, CSVFormat.EXCEL.withHeader(tblschema.getHeaders()).withDelimiter('|'));
 			 */
-			List<SelectItem> SelectStatements = plain.getSelectItems();
+			List<SelectItem> selectItems = plain.getSelectItems();
 			ArrayList <Function> selectlist = new ArrayList<Function>();
 			boolean is_aggregate=false;
-			for(SelectItem select: SelectStatements)
+			for(SelectItem select: selectItems)
 			{
 				//System.out.println(select);
 				Expression expression = ((SelectExpressionItem)select).getExpression();
@@ -206,6 +207,7 @@ public class Main{
 			int countNonNull =0;
 			double total=0;
 			double sum=0;
+			//PrimitiveValue sum ;
 			int row_count=0;
 			double average=0;
 			
@@ -218,11 +220,11 @@ public class Main{
 				rowData = Line1.split("\\|");
 				if(whereclauseabsent || e.eval(whereExpression).toBool())
 				{
-					if (is_aggregate ==false)
+					if (is_aggregate == false)
 					{
-						for(int i=0;i<SelectStatements.size();i++)
+						for(int i=0;i<selectItems.size();i++)
 						{
-							PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(i)).getExpression());
+							PrimitiveValue result = e.eval(((SelectExpressionItem)selectItems.get(i)).getExpression());
 							sb.append(result+"|");
 						}
 
@@ -244,11 +246,11 @@ public class Main{
 							{
 								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 								PrimitiveValue result = e.eval(operand);
+								
 								if(result!=null)
 								{
-									sum+=result.toDouble();
+									//sum+=result.toDouble();
 								}
-							
 							}
 							else if(item.getName().equalsIgnoreCase("AVG"))
 							{
@@ -331,7 +333,7 @@ public class Main{
 					Function item = selectlist.get(i);
 					if(item.getName().equalsIgnoreCase("SUM"))
 					{
-						sb.append(sum+"|");
+						//sb.append(sum+"|");
 					}
 					else if(item.getName().equalsIgnoreCase("AVG"))
 					{
