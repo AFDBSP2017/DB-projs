@@ -1,9 +1,11 @@
+//create table R(A int, B String, C String, D int );Select SUM(A),B, SUM(D) From R
+//create table R(A int, B String, C String, D int );Select SUM(A),Count(*), SUM(D),MIN(A),MAX(D),AVG(D),Count(C) From R
 //create table R(A int, B String, C String, D int );Select SUM(A), SUM(D) From R;
-		//create table R(A int, B String, C String, D int ); select A,B,C,D from R
-		//create table R(A int, B String, C String, D int ); select A,B from R where A=1 and B=1;select * from R
-		//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (B=1 AND D =9)
-		//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (C>4 AND B=1 AND D =9)
-		//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (C>4 AND B=1) AND (B>2 OR D =9)
+//create table R(A int, B String, C String, D int ); select A,B,C,D from R
+//create table R(A int, B String, C String, D int ); select A,B from R where A=1 and B=1;select * from R
+//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (B=1 AND D =9)
+//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (C>4 AND B=1 AND D =9)
+//create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (C>4 AND B=1) AND (B>2 OR D =9)
 
 package dubstep;
 import java.io.StringReader;
@@ -45,46 +47,6 @@ import java.io.IOException;
 
 
 public class Main{
-	static class EvalLib extends Eval{
-		String tableName = "";
-		public EvalLib(String tableName){
-			this.tableName = tableName;
-		}
-		@Override
-		public PrimitiveValue eval(Column col) throws SQLException {
-
-
-			int index =columnNameToIndexMapping.get(tableName).get(col.getColumnName());
-			if(columnDataTypes.get(tableName).get(index).equals("String"))
-			{
-				return new StringValue(rowData[index].trim());
-			}
-			else if(columnDataTypes.get(tableName).get(index).equals("int"))
-			{
-				return new LongValue(rowData[index].trim());
-			}
-			else if(columnDataTypes.get(tableName).get(index).equals("varchar"))
-			{
-				return new StringValue(rowData[index].trim());
-			}
-			else if(columnDataTypes.get(tableName).get(index).equals("char"))
-			{
-				return new StringValue(rowData[index].trim());
-			}
-			else if(columnDataTypes.get(tableName).get(index).equals("decimal"))
-			{
-				return new DoubleValue(rowData[index].trim());
-			}
-			else if(columnDataTypes.get(tableName).get(index).equals("date"))
-			{
-				return new DateValue(rowData[index].trim());
-			}
-			else
-			{
-				return new StringValue(rowData[index].trim());
-			}
-		}
-	}
 	static String[] rowData = null;
 	//public enum columndDataTypess  {String,varchar,Char,Int,decimal,date}; 
 	public static BufferedReader br = null;
@@ -102,6 +64,9 @@ public class Main{
 	public static Select select;
 	public static SelectBody body;
 	public static Map<String, PrimitiveValue> rowMap= null;
+	
+	
+	
 
 	public static void main(String[] args) throws Exception
 	{
@@ -172,8 +137,7 @@ public class Main{
 
 	public static void getSelectedColumns(String tableName, Expression whereExpression) throws IOException
 	{
-		try{
-			
+		try{			
 			//Table table = (Table) plain.getFromItem();
 			//String tableName = table.getName();
 			String csvFile_local_copy = csvFile+tableName+".csv";
@@ -181,33 +145,15 @@ public class Main{
 			StringBuilder sb = new StringBuilder();
 			EvalLib e = new EvalLib(tableName);
 			PrimitiveValue pv = null;
-
-			/*
-			import org.apache.commons.csv.CSVFormat;
-			import org.apache.commons.csv.CSVParser;
-			import org.apache.commons.csv.CSVRecord;
-
-			Reader in = new FileReader(file);
-						CSVParser parser = new CSVParser(in, CSVFormat.EXCEL.withHeader(tblschema.getHeaders()).withDelimiter('|'));
-			 */
+			Map<Integer,Double> aggrMap = new HashMap<Integer, Double>();
+			Map<Integer,String> aggrStrMap = new HashMap<Integer, String>();
+			Map<Integer,Integer> aggrDenomMap = new HashMap<Integer, Integer>();
+			
 			List<SelectItem> selectItems = plain.getSelectItems();
-			ArrayList <Function> selectlist = new ArrayList<Function>();
+			ArrayList <Expression> selectlist = new ArrayList<Expression>();
 			boolean whereclauseabsent = (plain.getWhere()==null)?true:false;
 			boolean isStarPresent = false;
 			boolean is_aggregate=false;
-			for(SelectItem select: selectItems)
-			{
-				//System.out.println(select);
-				if(select.toString().equals("*")){ isStarPresent = true; break; }
-				Expression expression = ((SelectExpressionItem)select).getExpression();
-				if(expression instanceof Function)
-				{
-					is_aggregate = true;
-					selectlist.add((Function) expression);
-				}
-			}
-
-
 			//System.out.println("is_aggregate = " + is_aggregate);
 			PrimitiveValue Max = null;
 			PrimitiveValue Min = null;
@@ -219,8 +165,21 @@ public class Main{
 			//PrimitiveValue sum ;
 			int row_count=0;
 			double average=0;
-			int charCount = 0;
 			
+			for(SelectItem select: selectItems)
+			{
+				//System.out.println(select);
+				if(select.toString().equals("*")){ isStarPresent = true; break; }
+				Expression expression = ((SelectExpressionItem)select).getExpression();
+				if(expression instanceof Function)
+				{
+					is_aggregate = true;
+					selectlist.add((Function) expression);
+				}
+				else{
+					selectlist.add(expression);
+				}
+			}
 			if(isStarPresent){ // If a star is present then read the file at once to avoid i/o costs
 				
 				sb.append(String
@@ -232,6 +191,7 @@ public class Main{
 		
 			}
 			else{
+				//System.out.println("totalCount:"+br.lines().count());
 				while ((line = br.readLine()) != null) 
 				{
 					//System.out.println("Debug: "+line);
@@ -256,90 +216,107 @@ public class Main{
 						}
 						else
 						{
+							
 							for(int i =0; i<selectlist.size();i++)
 							{
-								Function item = selectlist.get(i);
-								
-								if(item.getName().equalsIgnoreCase("SUM"))
-								{
-									Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-									result = e.eval(operand);
+								Function item = null;
+								Expression operand = null;
+								if(selectlist.get(i) instanceof Function){
+									item = (Function) selectlist.get(i);
 									
-									if(result!=null)
-									{
-										sum+=result.toDouble();
+									if(aggrMap.get(i)==null){
+										aggrMap.put(i,0.0);
 									}
-								}
-								else if(item.getName().equalsIgnoreCase("AVG"))
-								{
-									Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-									int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
-									String temp =(rowData[index].trim());
-									if(temp.length() != 0)
+									if(item.getName().equalsIgnoreCase("AVG")){
+										aggrDenomMap.put(i, 0);
+									}
+									if(item.getName().equalsIgnoreCase("SUM"))
 									{
+										//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+										operand = (Expression) item.getParameters().getExpressions().get(0);
 										result = e.eval(operand);
+										
 										if(result!=null)
 										{
-											total += result.toDouble();
-											row_count++;
+											aggrMap.put(i, aggrMap.get(i)+result.toDouble());
 										}
 									}
-								}
-								else if(item.toString().toLowerCase().contains("count(*)"))
-								{
-									countAll++;
-								}
-								else if(item.getName().equalsIgnoreCase("COUNT"))
-								{
-									Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-									int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
-									String temp =(rowData[index].trim());
-									if(temp.length() != 0)
+									else if(item.getName().equalsIgnoreCase("AVG"))
 									{
-										result = e.eval(operand);
-										if(result!=null)
+										//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+										operand = (Expression) item.getParameters().getExpressions().get(0);
+										int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+										String temp =(rowData[index].trim());
+										if(temp.length() != 0)
 										{
-											countNonNull++;
+											result = e.eval(operand);
+											if(result!=null)
+											{
+												aggrMap.put(i, aggrMap.get(i)+result.toDouble());
+												aggrDenomMap.put(i, (aggrDenomMap.get(i)+1));
+											}
 										}
+									}
+									else if(item.toString().toLowerCase().contains("count(*)"))
+									{
+										countAll++;
+										aggrMap.put(i,(double) countAll);
+									}
+									else if(item.getName().equalsIgnoreCase("COUNT"))
+									{
+										//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+										operand = (Expression) item.getParameters().getExpressions().get(0);
+										int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+										String temp =(rowData[index].trim());
+										if(temp.length() != 0)
+										{
+											//result = e.eval(operand);
+											if(e.eval(operand)!=null)
+											{
+												aggrMap.put(i,(aggrMap.get(i)+1));
+											}
+										}
+									}
+									else if(item.getName().equalsIgnoreCase("MIN"))
+									{
+										//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+										operand = (Expression) item.getParameters().getExpressions().get(0);
+										int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+										String temp =(rowData[index].trim());
+										if(temp.length() != 0)
+										{
+											result = e.eval(operand);
+//											if(aggrMap.get(i)==null)
+//											{
+//												aggrMap.put(i,result.toDouble());
+//											}
+//											else 
+											if(result.toDouble() < aggrMap.get(i))
+											{
+												aggrMap.put(i,result.toDouble());
+											}
+										}
+									}
+									else if(item.getName().equalsIgnoreCase("MAX"))
+									{
+										operand = (Expression) item.getParameters().getExpressions().get(0);
+										int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+										String temp =(rowData[index].trim());
+										if(temp.length() != 0)
+										{
+											result = e.eval(operand);
+											if(result.toDouble() > aggrMap.get(i))
+											{
+												aggrMap.put(i,result.toDouble());
+											}
+										}
+									}
+								}else{// If the Column is not an aggregate column then simply get the value
+									operand = selectlist.get(i);
+									if(aggrStrMap.get(i)==null){
+										aggrStrMap.put(i, e.eval(operand).toRawString());
 									}
 								}
-								else if(item.getName().equalsIgnoreCase("MIN"))
-								{
-									Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-									int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
-									String temp =(rowData[index].trim());
-									if(temp.length() != 0)
-									{
-										result = e.eval(operand);
-										if(Min==null)
-										{
-											Min = result;
-										}
-										else if(result.toDouble() < Min.toDouble())
-										{
-											Min = result;
-										}
-									}
-								}
-								else if(item.getName().equalsIgnoreCase("MAX"))
-								{
-									Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-									int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
-									String temp =(rowData[index].trim());
-									if(temp.length() != 0)
-									{
-										result = e.eval(operand);
-										if(Max==null)
-										{
-											Max = result;
-										}
-		
-										else if(result.toDouble() > Max.toDouble())
-										{
-											Max = result;
-										}
-									}
-								}	
 							}
 						}
 					}
@@ -350,31 +327,23 @@ public class Main{
 			{
 				for(int i =0; i<selectlist.size();i++)
 				{
-					Function item = selectlist.get(i);
-					if(item.getName().equalsIgnoreCase("SUM"))
-					{
-						sb.append((result instanceof LongValue)?((long)sum)+"|":sum+"|");
-					}
-					else if(item.getName().equalsIgnoreCase("AVG"))
-					{
-						average=total/row_count;
-						sb.append(average+"|");
-					}
-					else if(item.toString().toLowerCase().contains("count(*)"))
-					{
-						sb.append(countAll+"|");
-					}
-					else if(item.getName().equalsIgnoreCase("COUNT"))
-					{
-						sb.append(countNonNull+"|");
-					}
-					else if(item.getName().equalsIgnoreCase("Min"))
-					{
-						sb.append(Min+"|");
-					}
-					else if(item.getName().equalsIgnoreCase("Max"))
-					{
-						sb.append(Max+"|");
+					Function item = null;
+					
+					if(selectlist.get(i) instanceof Function){
+						item = (Function) selectlist.get(i);
+						if(item.getName().equalsIgnoreCase("SUM")
+						||item.getName().equalsIgnoreCase("Min")
+						||item.getName().equalsIgnoreCase("COUNT")
+						||item.toString().toLowerCase().contains("count(*)")
+						||item.getName().equalsIgnoreCase("Max"))
+						{
+							sb.append((result instanceof LongValue)?(aggrMap.get(i).longValue())+"|":aggrMap.get(i)+"|");
+						}
+						else if(item.getName().equalsIgnoreCase("AVG")){
+							sb.append((aggrMap.get(i)/aggrDenomMap.get(i))+"|");
+						}
+					}else{// if its a Simple String Column or Simple Number Column
+						sb.append(aggrStrMap.get(i)+"|");
 					}
 				}
 			}
@@ -422,6 +391,47 @@ public class Main{
 		StringReader input = new StringReader(temp);
 		parser = new CCJSqlParser(input);
 		statement = parser.Statement();  
+	}
+	
+	static class EvalLib extends Eval{
+		String tableName = "";
+		public EvalLib(String tableName){
+			this.tableName = tableName;
+		}
+		@Override
+		public PrimitiveValue eval(Column col) throws SQLException {
+
+
+			int index =columnNameToIndexMapping.get(tableName).get(col.getColumnName());
+			if(columnDataTypes.get(tableName).get(index).equals("String"))
+			{
+				return new StringValue(rowData[index].trim());
+			}
+			else if(columnDataTypes.get(tableName).get(index).equals("int"))
+			{
+				return new LongValue(rowData[index].trim());
+			}
+			else if(columnDataTypes.get(tableName).get(index).equals("varchar"))
+			{
+				return new StringValue(rowData[index].trim());
+			}
+			else if(columnDataTypes.get(tableName).get(index).equals("char"))
+			{
+				return new StringValue(rowData[index].trim());
+			}
+			else if(columnDataTypes.get(tableName).get(index).equals("decimal"))
+			{
+				return new DoubleValue(rowData[index].trim());
+			}
+			else if(columnDataTypes.get(tableName).get(index).equals("date"))
+			{
+				return new DateValue(rowData[index].trim());
+			}
+			else
+			{
+				return new StringValue(rowData[index].trim());
+			}
+		}
 	}
 
 }
