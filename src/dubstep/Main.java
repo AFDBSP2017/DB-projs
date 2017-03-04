@@ -7,6 +7,9 @@
 
 package dubstep;
 import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,6 +38,8 @@ import net.sf.jsqlparser.statement.select.SelectExpressionItem;
 import net.sf.jsqlparser.statement.select.SelectItem;
 import net.sf.jsqlparser.eval.*;
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 
@@ -42,7 +47,6 @@ import java.io.IOException;
 public class Main{
 	static class EvalLib extends Eval{
 		String tableName = "";
-
 		public EvalLib(String tableName){
 			this.tableName = tableName;
 		}
@@ -103,7 +107,7 @@ public class Main{
 	{
 
 		
-		System.out.print("$> ");
+		System.out.print("$>");
 		scan = new Scanner(System.in);
 		String temp;
 		while((temp = scan.nextLine()) != null)
@@ -169,6 +173,7 @@ public class Main{
 	public static void getSelectedColumns(String tableName, Expression whereExpression) throws IOException
 	{
 		try{
+			
 			//Table table = (Table) plain.getFromItem();
 			//String tableName = table.getName();
 			String csvFile_local_copy = csvFile+tableName+".csv";
@@ -187,10 +192,13 @@ public class Main{
 			 */
 			List<SelectItem> selectItems = plain.getSelectItems();
 			ArrayList <Function> selectlist = new ArrayList<Function>();
+			boolean whereclauseabsent = (plain.getWhere()==null)?true:false;
+			boolean isStarPresent = false;
 			boolean is_aggregate=false;
 			for(SelectItem select: selectItems)
 			{
 				//System.out.println(select);
+				if(select.toString().equals("*")){ isStarPresent = true; break; }
 				Expression expression = ((SelectExpressionItem)select).getExpression();
 				if(expression instanceof Function)
 				{
@@ -207,125 +215,137 @@ public class Main{
 			int countNonNull =0;
 			double total=0;
 			double sum=0;
+			PrimitiveValue result=null;
 			//PrimitiveValue sum ;
 			int row_count=0;
 			double average=0;
+			int charCount = 0;
 			
-			boolean whereclauseabsent = (plain.getWhere()==null)?true:false;
-			
-			while ((line = br.readLine()) != null) 
-			{
-				//System.out.println("Debug: "+line);
-				String Line1 = line.replace("|", "| ");
-				rowData = Line1.split("\\|");
-				if(whereclauseabsent || e.eval(whereExpression).toBool())
+			if(isStarPresent){ // If a star is present then read the file at once to avoid i/o costs
+				
+				sb.append(String
+						.join(
+								System.getProperty("line.separator")
+								,Files.readAllLines(Paths.get(csvFile_local_copy))
+								)
+						);
+		
+			}
+			else{
+				while ((line = br.readLine()) != null) 
 				{
-					if (is_aggregate == false)
+					//System.out.println("Debug: "+line);
+					rowData = line.replace("|", "| ").split("\\|");
+					if(whereclauseabsent || e.eval(whereExpression).toBool())
 					{
-						for(int i=0;i<selectItems.size();i++)
+						if (is_aggregate == false) // Either Select Can have aggregate, with columns OR *
 						{
-							PrimitiveValue result = e.eval(((SelectExpressionItem)selectItems.get(i)).getExpression());
-							sb.append(result+"|");
-						}
+							for(int i=0;i<selectItems.size();i++)
+							{
+								result = e.eval(((SelectExpressionItem)selectItems.get(i)).getExpression());
+								sb.append(result.toRawString()+"|");
+							}
 
-						if(sb.length() >=2)
-						{
-							sb.setLength(sb.length() - 1);
-							sb.append("\n");
+							if(sb.length() >=2)
+							{
+								sb.setLength(sb.length() - 1);
+								sb.append("\n");
+							}
+							//PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
+							//sb.append(result+"\n");
 						}
-						//PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
-						//sb.append(result+"\n");
-					}
-					else
-					{
-						for(int i =0; i<selectlist.size();i++)
+						else
 						{
-							Function item = selectlist.get(i);
-							
-							if(item.getName().equalsIgnoreCase("SUM"))
+							for(int i =0; i<selectlist.size();i++)
 							{
-								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-								PrimitiveValue result = e.eval(operand);
+								Function item = selectlist.get(i);
 								
-								if(result!=null)
+								if(item.getName().equalsIgnoreCase("SUM"))
 								{
-									//sum+=result.toDouble();
-								}
-							}
-							else if(item.getName().equalsIgnoreCase("AVG"))
-							{
-								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-								int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
-								String temp =(rowData[index].trim());
-								if(temp.length() != 0)
-								{
-									PrimitiveValue result = e.eval(operand);
+									Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+									result = e.eval(operand);
+									
 									if(result!=null)
 									{
-										total += result.toDouble();
-										row_count++;
+										sum+=result.toDouble();
 									}
 								}
-							}
-							else if(item.toString().toLowerCase().contains("count(*)"))
-							{
-								countAll++;
-							}
-							else if(item.getName().equalsIgnoreCase("COUNT"))
-							{
-								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-								int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
-								String temp =(rowData[index].trim());
-								if(temp.length() != 0)
+								else if(item.getName().equalsIgnoreCase("AVG"))
 								{
-									PrimitiveValue result = e.eval(operand);
-									if(result!=null)
+									Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+									int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+									String temp =(rowData[index].trim());
+									if(temp.length() != 0)
 									{
-										countNonNull++;
+										result = e.eval(operand);
+										if(result!=null)
+										{
+											total += result.toDouble();
+											row_count++;
+										}
 									}
 								}
-							}
-							else if(item.getName().equalsIgnoreCase("MIN"))
-							{
-								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-								int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
-								String temp =(rowData[index].trim());
-								if(temp.length() != 0)
+								else if(item.toString().toLowerCase().contains("count(*)"))
 								{
-									PrimitiveValue result = e.eval(operand);
-									if(Min==null)
-									{
-										Min = result;
-									}
-									else if(result.toDouble() < Min.toDouble())
-									{
-										Min = result;
-									}
+									countAll++;
 								}
-							}
-							else if(item.getName().equalsIgnoreCase("MAX"))
-							{
-								Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-								int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
-								String temp =(rowData[index].trim());
-								if(temp.length() != 0)
+								else if(item.getName().equalsIgnoreCase("COUNT"))
 								{
-									PrimitiveValue result = e.eval(operand);
-									if(Max==null)
+									Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+									int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+									String temp =(rowData[index].trim());
+									if(temp.length() != 0)
 									{
-										Max = result;
-									}
-	
-									else if(result.toDouble() > Max.toDouble())
-									{
-										Max = result;
+										result = e.eval(operand);
+										if(result!=null)
+										{
+											countNonNull++;
+										}
 									}
 								}
-							}	
+								else if(item.getName().equalsIgnoreCase("MIN"))
+								{
+									Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+									int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+									String temp =(rowData[index].trim());
+									if(temp.length() != 0)
+									{
+										result = e.eval(operand);
+										if(Min==null)
+										{
+											Min = result;
+										}
+										else if(result.toDouble() < Min.toDouble())
+										{
+											Min = result;
+										}
+									}
+								}
+								else if(item.getName().equalsIgnoreCase("MAX"))
+								{
+									Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+									int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+									String temp =(rowData[index].trim());
+									if(temp.length() != 0)
+									{
+										result = e.eval(operand);
+										if(Max==null)
+										{
+											Max = result;
+										}
+		
+										else if(result.toDouble() > Max.toDouble())
+										{
+											Max = result;
+										}
+									}
+								}	
+							}
 						}
 					}
 				}
 			}
+			
 			if(is_aggregate==true)
 			{
 				for(int i =0; i<selectlist.size();i++)
@@ -333,7 +353,7 @@ public class Main{
 					Function item = selectlist.get(i);
 					if(item.getName().equalsIgnoreCase("SUM"))
 					{
-						//sb.append(sum+"|");
+						sb.append((result instanceof LongValue)?((long)sum)+"|":sum+"|");
 					}
 					else if(item.getName().equalsIgnoreCase("AVG"))
 					{
