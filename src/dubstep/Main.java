@@ -52,8 +52,8 @@ public class Main{
 	public static BufferedReader br = null;
 	//
 	
-	//public static String csvFile = "src\\dubstep\\data\\";
-	public static String csvFile = "data/";
+	public static String csvFile = "src\\dubstep\\data\\";
+	//public static String csvFile = "data/";
 	public static String line = "";
 	public static Statement statement;
 	public static Scanner scan;
@@ -224,8 +224,8 @@ public class Main{
 										aggrMap.put(i,0.0);
 									}
 									
-									switch (item.getName()){
-									case "AVG":
+									switch (item.getName().toLowerCase()){
+									case "avg":
 										aggrDenomMap.put(i, 0);
 										
 										operand = (Expression) item.getParameters().getExpressions().get(0);
@@ -241,7 +241,7 @@ public class Main{
 											}
 										}
 										break;
-									case "SUM":
+									case "sum":
 										operand = (Expression) item.getParameters().getExpressions().get(0);
 										result = e.eval(operand);
 										
@@ -252,8 +252,9 @@ public class Main{
 										break;
 									case "count":
 										
-										if(item.toString().toLowerCase().contains("count(*)")){
-											System.out.println(item.toString().toLowerCase());	
+										if(item.toString().toLowerCase().contains("count(*)"))
+										{
+											//System.out.println(item.toString().toLowerCase());	
 											countAll++;
 											aggrMap.put(i,(double) countAll);
 										}
@@ -271,7 +272,7 @@ public class Main{
 											}
 										}
 										break;
-									case "MIN":
+									case "min":
 										operand = (Expression) item.getParameters().getExpressions().get(0);
 										index =columnNameToIndexMapping.get(tableName).get(operand.toString());
 										temp =(rowData[index]);
@@ -284,7 +285,7 @@ public class Main{
 											}
 										}
 										break;
-									case "MAX":
+									case "max":
 										operand = (Expression) item.getParameters().getExpressions().get(0);
 										index =columnNameToIndexMapping.get(tableName).get(operand.toString());
 										temp =(rowData[index]);
