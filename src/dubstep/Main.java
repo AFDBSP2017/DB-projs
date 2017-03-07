@@ -52,8 +52,8 @@ public class Main{
 	public static BufferedReader br = null;
 	//
 	
-	public static String csvFile = "src\\dubstep\\data\\";
-	//public static String csvFile = "data/";
+	//public static String csvFile = "src\\dubstep\\data\\";
+	public static String csvFile = "data/";
 	public static String line = "";
 	public static Statement statement;
 	public static Scanner scan;
@@ -169,6 +169,7 @@ public class Main{
 			for(SelectItem select: selectItems)
 			{
 				//System.out.println(select);
+				
 				if(select.toString().equals("*")){ isStarPresent = true; break; }
 				Expression expression = ((SelectExpressionItem)select).getExpression();
 				if(expression instanceof Function)
@@ -192,27 +193,23 @@ public class Main{
 			}
 			else{
 				//System.out.println("totalCount:"+br.lines().count());
+				int index=0;
+				String temp = "";
 				while ((line = br.readLine()) != null) 
 				{
 					//System.out.println("Debug: "+line);
-					rowData = line.replace("|", "| ").split("\\|");
+					rowData = line.split("\\|",-1);
 					if(whereclauseabsent || e.eval(whereExpression).toBool())
 					{
 						if (is_aggregate == false) // Either Select Can have aggregate, with columns OR *
 						{
-							for(int i=0;i<selectItems.size();i++)
+							for(int i=0;i<selectItems.size()-1;i++)
 							{
 								result = e.eval(((SelectExpressionItem)selectItems.get(i)).getExpression());
-								sb.append(result.toRawString()+"|");
+								sb.append(result.toRawString().concat("|"));
 							}
-
-							if(sb.length() >=2)
-							{
-								sb.setLength(sb.length() - 1);
-								sb.append("\n");
-							}
-							//PrimitiveValue result = e.eval(((SelectExpressionItem)SelectStatements.get(SelectStatements.size()-1)).getExpression());
-							//sb.append(result+"\n");
+							result = e.eval(((SelectExpressionItem)selectItems.get(selectItems.size()-1)).getExpression());
+							sb.append(result.toRawString()+"\n");
 						}
 						else
 						{
@@ -223,31 +220,18 @@ public class Main{
 								Expression operand = null;
 								if(selectlist.get(i) instanceof Function){
 									item = (Function) selectlist.get(i);
-									
 									if(aggrMap.get(i)==null){
 										aggrMap.put(i,0.0);
 									}
-									if(item.getName().equalsIgnoreCase("AVG")){
+									
+									switch (item.getName()){
+									case "AVG":
 										aggrDenomMap.put(i, 0);
-									}
-									if(item.getName().equalsIgnoreCase("SUM"))
-									{
-										//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
-										operand = (Expression) item.getParameters().getExpressions().get(0);
-										result = e.eval(operand);
 										
-										if(result!=null)
-										{
-											aggrMap.put(i, aggrMap.get(i)+result.toDouble());
-										}
-									}
-									else if(item.getName().equalsIgnoreCase("AVG"))
-									{
-										//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
 										operand = (Expression) item.getParameters().getExpressions().get(0);
-										int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
-										String temp =(rowData[index].trim());
-										if(temp.length() != 0)
+										index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+										temp =(rowData[index]);
+										if(temp.trim().length() != 0)
 										{
 											result = e.eval(operand);
 											if(result!=null)
@@ -256,53 +240,55 @@ public class Main{
 												aggrDenomMap.put(i, (aggrDenomMap.get(i)+1));
 											}
 										}
-									}
-									else if(item.toString().toLowerCase().contains("count(*)"))
-									{
-										countAll++;
-										aggrMap.put(i,(double) countAll);
-									}
-									else if(item.getName().equalsIgnoreCase("COUNT"))
-									{
-										//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+										break;
+									case "SUM":
 										operand = (Expression) item.getParameters().getExpressions().get(0);
-										int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
-										String temp =(rowData[index].trim());
-										if(temp.length() != 0)
+										result = e.eval(operand);
+										
+										if(result!=null)
 										{
-											//result = e.eval(operand);
-											if(e.eval(operand)!=null)
+											aggrMap.put(i, aggrMap.get(i)+result.toDouble());
+										}
+										break;
+									case "count":
+										
+										if(item.toString().toLowerCase().contains("count(*)")){
+											System.out.println(item.toString().toLowerCase());	
+											countAll++;
+											aggrMap.put(i,(double) countAll);
+										}
+										else{
+											operand = (Expression) item.getParameters().getExpressions().get(0);
+											index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+											temp =(rowData[index]);
+											if(temp.trim().length() != 0)
 											{
-												aggrMap.put(i,(aggrMap.get(i)+1));
+												//result = e.eval(operand);
+												if(e.eval(operand)!=null)
+												{
+													aggrMap.put(i,(aggrMap.get(i)+1));
+												}
 											}
 										}
-									}
-									else if(item.getName().equalsIgnoreCase("MIN"))
-									{
-										//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+										break;
+									case "MIN":
 										operand = (Expression) item.getParameters().getExpressions().get(0);
-										int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
-										String temp =(rowData[index].trim());
-										if(temp.length() != 0)
+										index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+										temp =(rowData[index]);
+										if(temp.trim().length() != 0)
 										{
 											result = e.eval(operand);
-//											if(aggrMap.get(i)==null)
-//											{
-//												aggrMap.put(i,result.toDouble());
-//											}
-//											else 
 											if(result.toDouble() < aggrMap.get(i))
 											{
 												aggrMap.put(i,result.toDouble());
 											}
 										}
-									}
-									else if(item.getName().equalsIgnoreCase("MAX"))
-									{
+										break;
+									case "MAX":
 										operand = (Expression) item.getParameters().getExpressions().get(0);
-										int index =columnNameToIndexMapping.get(tableName).get(operand.toString());
-										String temp =(rowData[index].trim());
-										if(temp.length() != 0)
+										index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+										temp =(rowData[index]);
+										if(temp.trim().length() != 0)
 										{
 											result = e.eval(operand);
 											if(result.toDouble() > aggrMap.get(i))
@@ -310,7 +296,44 @@ public class Main{
 												aggrMap.put(i,result.toDouble());
 											}
 										}
+										break;
+									default:
+										break;
+										
 									}
+										
+//									
+//									if(item.getName().equalsIgnoreCase("AVG")){
+//										
+//									}
+//									if(item.getName().equalsIgnoreCase("SUM"))
+//									{
+//										//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+//										
+//									}
+//									else if(item.getName().equalsIgnoreCase("AVG"))
+//									{
+//										//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+//										
+//									}
+//									else if(item.toString().toLowerCase().contains("count(*)"))
+//									{
+//										
+//									}
+//									else if(item.getName().equalsIgnoreCase("COUNT"))
+//									{
+//										//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+//										
+//									}
+//									else if(item.getName().equalsIgnoreCase("MIN"))
+//									{
+//										//Expression operand = (Expression) item.getParameters().getExpressions().get(0);
+//										
+//									}
+//									else if(item.getName().equalsIgnoreCase("MAX"))
+//									{
+//										
+//									}
 								}else{// If the Column is not an aggregate column then simply get the value
 									operand = selectlist.get(i);
 									if(aggrStrMap.get(i)==null){
@@ -352,7 +375,7 @@ public class Main{
 				sb.setLength(sb.length() - 1);
 				sb.append("\n");
 			}
-			System.out.print(sb.toString());
+			System.out.print(sb);
 		}
 		catch(SQLException e){
 			System.out.println(e.getMessage());
@@ -400,37 +423,23 @@ public class Main{
 		}
 		@Override
 		public PrimitiveValue eval(Column col) throws SQLException {
-
-
 			int index =columnNameToIndexMapping.get(tableName).get(col.getColumnName());
-			if(columnDataTypes.get(tableName).get(index).equals("String"))
+			switch(columnDataTypes.get(tableName).get(index))
 			{
-				return new StringValue(rowData[index].trim());
+				case "String":
+				case "varchar":
+				case "char":
+					return new StringValue(rowData[index]);
+				case "int":
+					return new LongValue(rowData[index]);
+				case "decimal":
+					return new DoubleValue(rowData[index]);
+				case "date":
+					return new DateValue(rowData[index]);
+				default:
+					return new StringValue(rowData[index]);
 			}
-			else if(columnDataTypes.get(tableName).get(index).equals("int"))
-			{
-				return new LongValue(rowData[index].trim());
-			}
-			else if(columnDataTypes.get(tableName).get(index).equals("varchar"))
-			{
-				return new StringValue(rowData[index].trim());
-			}
-			else if(columnDataTypes.get(tableName).get(index).equals("char"))
-			{
-				return new StringValue(rowData[index].trim());
-			}
-			else if(columnDataTypes.get(tableName).get(index).equals("decimal"))
-			{
-				return new DoubleValue(rowData[index].trim());
-			}
-			else if(columnDataTypes.get(tableName).get(index).equals("date"))
-			{
-				return new DateValue(rowData[index].trim());
-			}
-			else
-			{
-				return new StringValue(rowData[index].trim());
-			}
+			
 		}
 	}
 
