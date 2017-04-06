@@ -53,7 +53,7 @@ import java.io.IOException;
 import java.io.Reader;
 
 
-public class Main{
+public class Main_Proj1{
 	static String[] rowData = null;
 	//public enum columndDataTypess  {String,varchar,Char,Int,decimal,date}; 
 	public static BufferedReader br = null;
