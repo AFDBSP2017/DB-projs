@@ -1,25 +1,48 @@
 package dubstep;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 import java.util.Scanner;
-
+import net.sf.jsqlparser.expression.DateValue;
+import net.sf.jsqlparser.expression.DoubleValue;
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.LongValue;
+import net.sf.jsqlparser.expression.PrimitiveValue;
+import net.sf.jsqlparser.expression.StringValue;
 import net.sf.jsqlparser.parser.CCJSqlParser;
 import net.sf.jsqlparser.parser.ParseException;
+import net.sf.jsqlparser.schema.Column;
+import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
+import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
+import net.sf.jsqlparser.statement.create.table.CreateTable;
+import net.sf.jsqlparser.statement.select.PlainSelect;
+import net.sf.jsqlparser.statement.select.Select;
+import net.sf.jsqlparser.statement.select.SelectBody;
 
 public class Main {
 
 	public static Scanner scan;
 	static String[] rowData = null; 
-	public static BufferedReader br = null;
-	
+	public static BufferedReader br = null;	
 	static Reader in = null;
 	public static String csvFile = "src\\dubstep\\data\\";
 	//public static String csvFile = "data/";
 	public static String line = "";
 	public static Statement statement;
+	public static PlainSelect plain;
+	public static Map<String,ArrayList <String>> columnDataTypes = new HashMap<String,ArrayList <String>>();
+	public static Map<String,Map<String,Integer>> columnNameToIndexMapping = new HashMap<String,Map<String,Integer>>();
+	public static Select select;
+	public static SelectBody body;
 	public static CCJSqlParser parser;
 	
 	public static void readQueries(String temp) throws ParseException
@@ -30,6 +53,77 @@ public class Main {
 		statement = parser.Statement();  
 	}
 
+	public static void parseQueries() throws Exception
+	{
+
+		while(statement != null)
+		{
+			if(statement instanceof CreateTable)
+			{
+				getColumnDataTypesAndMapColumnNameToIndex();
+			}
+			else if(statement instanceof Select)
+			{
+
+				parseSelectStatement();     
+			} 
+			else 
+			{
+				throw new Exception("I can't understand statement instanceof Select"+statement);
+			}
+			statement = parser.Statement();
+		}
+	}
+	public static void parseSelectStatement() throws Exception
+	{
+
+		select = (Select)statement;
+		body = select.getSelectBody();
+
+
+		if(body instanceof PlainSelect){
+
+			plain = (PlainSelect)body;
+			Table table = (Table) plain.getFromItem();
+			String tableName = table.getName();
+			getSelectedColumns(tableName, plain.getWhere());
+
+		}
+
+		else {
+			throw new Exception("I can't understand body instanceof PlainSelect "+statement);
+		}
+		/** Do something with the select operator **/
+
+	}
+	public static void getColumnDataTypesAndMapColumnNameToIndex() throws SQLException
+	{
+
+		CreateTable create = (CreateTable)statement;
+		String tableName = create.getTable().getName();
+		//System.out.println(tableName);
+		Map<String,Integer> columnNameToIndexMap = new HashMap<String,Integer>();
+		List<ColumnDefinition> si = create.getColumnDefinitions();
+		ListIterator<ColumnDefinition> it = si.listIterator();
+		ArrayList <String> dataTypes = new ArrayList <String>();
+
+		int i=0;
+		while(it.hasNext())
+		{
+			ColumnDefinition cd = it.next();
+			dataTypes.add(cd.getColDataType().toString());
+			//System.out.println("type = "+ dataTypes.get(i));
+			columnNameToIndexMap.put(cd.getColumnName() ,i++);
+		}
+		columnDataTypes.put(tableName, dataTypes);
+		columnNameToIndexMapping.put(tableName,columnNameToIndexMap);
+	}
+	
+	public static void getSelectedColumns(String tableName, Expression whereExpression) throws IOException
+	{
+		//implement me
+		
+	}
 	public static void main(String[] args) throws ParseException {
 		System.out.print("$>");
 		scan = new Scanner(System.in);
@@ -38,12 +132,44 @@ public class Main {
 		{
 
 			readQueries(temp);
-
 			//parseQueries();
 			System.out.print("$>");
 		}
 		scan.close();
 
 	}
+	
+	static class EvalLib extends Eval{
+		String tableName = "";
+		public EvalLib(String tableName){
+			this.tableName = tableName;
+		}
+		@Override
+		public PrimitiveValue eval(Column col) throws SQLException {
+			int index =columnNameToIndexMapping.get(tableName).get(col.getColumnName());
+			switch(columnDataTypes.get(tableName).get(index))
+			{
+			case "String":
+			case "varchar":
+			case "char":
+				return new StringValue(rowData[index]);
+				//return new StringValue(record.get(index));
+			case "int": 
+				return new LongValue(rowData[index]);
+				//return new LongValue(record.get(index));
+			case "decimal":
+				return new DoubleValue(rowData[index]);
+				//return new DoubleValue(record.get(index));
+			case "date":
+				return new DateValue(rowData[index]);
+				//return new DateValue(record.get(index));
+			default:
+				return new StringValue(rowData[index]);
+				//return new StringValue(record.get(index));
+			}
+
+		}
+	}
 
 }
+
