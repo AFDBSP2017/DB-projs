@@ -20,11 +20,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Scanner;
-
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
-
 import net.sf.jsqlparser.expression.DateValue;
 import net.sf.jsqlparser.expression.DoubleValue;
 import net.sf.jsqlparser.expression.Expression;
@@ -57,9 +52,7 @@ public class Main_Proj1{
 	static String[] rowData = null;
 	//public enum columndDataTypess  {String,varchar,Char,Int,decimal,date}; 
 	public static BufferedReader br = null;
-	//
-	static CSVParser csvParser = null;
-	static CSVRecord record = null;
+	
 	static Reader in = null;
 	public static String csvFile = "src\\dubstep\\data\\";
 	//public static String csvFile = "data/";
