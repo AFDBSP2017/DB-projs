@@ -1,12 +1,27 @@
 /*
-CREATE TABLE BOLDLY(DARINGLY int, POACH int, WITHIN string, FRAYS decimal);Select DARINGLY,WITHIN FROM BOLDLY WHERE POACH=65;
-CREATE TABLE CREAM(INSIDE int, DECOYS int, DURING string, DOUBT decimal);
-CREATE TABLE EXPRESS(ASYMPTOTES int, INSTRUCTIONS int, BUSY string, PEACH decimal);
-CREATE TABLE PLAY(LINEN int, BLUE int, PAST string, WATERS decimal);
-Select DARINGLY,WITHIN FROM BOLDLY WHERE POACH=65;
+CREATE TABLE LINEITEM(ORDERKEY INT,PARTKEY INT,SUPPKEY INT,LINENUMBER INT,QUANTITY DECIMAL,EXTENDEDPRICE DECIMAL,DISCOUNT DECIMAL,TAX DECIMAL,RETURNFLAG CHAR(1),LINESTATUS CHAR(1),SHIPDATE DATE,COMMITDATE DATE,RECEIPTDATE DATE,SHIPINSTRUCT CHAR(25),SHIPMODE CHAR(10),PRIMARY KEY (ORDERKEY,LINENUMBER),INDEX LINEITEM_shipdate (shipdate));
+SELECT
+LINEITEM.RETURNFLAG,
+LINEITEM.LINESTATUS,
+SUM(LINEITEM.QUANTITY) AS SUM_QTY,
+SUM(LINEITEM.EXTENDEDPRICE) AS SUM_BASE_PRICE, 
+SUM(LINEITEM.EXTENDEDPRICE*(1-LINEITEM.DISCOUNT)) AS SUM_DISC_PRICE, 
+SUM(LINEITEM.EXTENDEDPRICE*(1-LINEITEM.DISCOUNT)*(1+LINEITEM.TAX)) AS SUM_CHARGE, 
+AVG(LINEITEM.QUANTITY) AS AVG_QTY,
+AVG(LINEITEM.EXTENDEDPRICE) AS AVG_PRICE,
+AVG(LINEITEM.DISCOUNT) AS AVG_DISC,
+COUNT(*) AS COUNT_ORDER
+FROM
+LINEITEM
+WHERE
+LINEITEM.SHIPDATE <= DATE('1998-08-10')
+GROUP BY 
+LINEITEM.RETURNFLAG, LINEITEM.LINESTATUS 
+ORDER BY
+LINEITEM.RETURNFLAG, LINEITEM.LINESTATUS;
  */
 package dubstep;
-//import net.sf.jsqlparser.eval.Eval;
+import net.sf.jsqlparser.eval.Eval;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -35,6 +50,7 @@ import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import net.sf.jsqlparser.statement.create.table.CreateTable;
+import net.sf.jsqlparser.statement.select.OrderByElement;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SelectBody;
@@ -137,6 +153,9 @@ public class Main {
 		//implement me
 
 		EvalLib e = new EvalLib(tableName);
+		List<Column> grpByColumns = plain.getGroupByColumnReferences();
+		List<OrderByElement> orderByElements = plain.getOrderByElements();
+		
 		String csvFile_local_copy = csvFile+tableName+".csv";
 		br = new BufferedReader(new FileReader(String.format(csvFile_local_copy)));
 		StringBuilder sb = new StringBuilder();	
@@ -154,6 +173,8 @@ public class Main {
 		}
 		PrimitiveValue result=null;
 		boolean whereclauseabsent = (plain.getWhere()==null)?true:false;
+		
+		
 		
 		while((line=br.readLine())!=null)
 		{
