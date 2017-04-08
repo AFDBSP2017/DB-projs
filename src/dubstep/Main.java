@@ -1,6 +1,14 @@
+/*
+CREATE TABLE BOLDLY(DARINGLY int, POACH int, WITHIN string, FRAYS decimal);Select DARINGLY,WITHIN FROM BOLDLY WHERE POACH=65;
+CREATE TABLE CREAM(INSIDE int, DECOYS int, DURING string, DOUBT decimal);
+CREATE TABLE EXPRESS(ASYMPTOTES int, INSTRUCTIONS int, BUSY string, PEACH decimal);
+CREATE TABLE PLAY(LINEN int, BLUE int, PAST string, WATERS decimal);
+Select DARINGLY,WITHIN FROM BOLDLY WHERE POACH=65;
+ */
 package dubstep;
-
+//import net.sf.jsqlparser.eval.Eval;
 import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
@@ -14,9 +22,12 @@ import java.util.Scanner;
 import net.sf.jsqlparser.expression.DateValue;
 import net.sf.jsqlparser.expression.DoubleValue;
 import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.Function;
 import net.sf.jsqlparser.expression.LongValue;
 import net.sf.jsqlparser.expression.PrimitiveValue;
+import net.sf.jsqlparser.expression.PrimitiveValue.InvalidPrimitive;
 import net.sf.jsqlparser.expression.StringValue;
+import net.sf.jsqlparser.expression.operators.relational.InExpression;
 import net.sf.jsqlparser.parser.CCJSqlParser;
 import net.sf.jsqlparser.parser.ParseException;
 import net.sf.jsqlparser.schema.Column;
@@ -27,6 +38,8 @@ import net.sf.jsqlparser.statement.create.table.CreateTable;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SelectBody;
+import net.sf.jsqlparser.statement.select.SelectExpressionItem;
+import net.sf.jsqlparser.statement.select.SelectItem;
 
 public class Main {
 
@@ -44,7 +57,7 @@ public class Main {
 	public static Select select;
 	public static SelectBody body;
 	public static CCJSqlParser parser;
-	
+
 	public static void readQueries(String temp) throws ParseException
 	{
 
@@ -118,13 +131,63 @@ public class Main {
 		columnDataTypes.put(tableName, dataTypes);
 		columnNameToIndexMapping.put(tableName,columnNameToIndexMap);
 	}
-	
-	public static void getSelectedColumns(String tableName, Expression whereExpression) throws IOException
+
+	public static void getSelectedColumns(String tableName, Expression whereExpression) throws IOException, InvalidPrimitive, SQLException
 	{
 		//implement me
+
+		EvalLib e = new EvalLib(tableName);
+		String csvFile_local_copy = csvFile+tableName+".csv";
+		br = new BufferedReader(new FileReader(String.format(csvFile_local_copy)));
+		StringBuilder sb = new StringBuilder();	
+		List<SelectItem> selectItems = plain.getSelectItems();
+		boolean isStarPresent = false;
+		for(SelectItem select: selectItems)
+		{
+			//System.out.println(select);
+
+			if(select.toString().equals("*")){ 
+				
+				isStarPresent = true; break;
+				
+			}
+		}
+		PrimitiveValue result=null;
+		boolean whereclauseabsent = (plain.getWhere()==null)?true:false;
+		
+		while((line=br.readLine())!=null)
+		{
+			//record = iter.next();
+			//System.out.println("Debug: "+line);
+			rowData = line.split("\\|",-1);
+			if(isStarPresent && e.eval(whereExpression).toBool()){
+				
+				sb.append(line+"\n");
+				
+			}
+			else if(whereclauseabsent || e.eval(whereExpression).toBool())
+			{
+				for(int i=0;i<selectItems.size()-1;i++)
+				{
+					result = e.eval(((SelectExpressionItem)selectItems.get(i)).getExpression());
+					sb.append(result.toRawString().concat("|"));
+				}
+				result = e.eval(((SelectExpressionItem)selectItems.get(selectItems.size()-1)).getExpression());
+				sb.append(result.toRawString()+"\n");
+				
+			}
+		}
+		System.out.println(sb.toString());
+	}
+	
+	public static Expression inExpression(InExpression exp){
+		
+		
+		return null;
 		
 	}
-	public static void main(String[] args) throws ParseException {
+	
+	public static void main(String[] args) throws Exception {
 		System.out.print("$>");
 		scan = new Scanner(System.in);
 		String temp;
@@ -132,12 +195,14 @@ public class Main {
 		{
 
 			readQueries(temp);
-			//parseQueries();
+			parseQueries();
 			System.out.print("$>");
 		}
 		scan.close();
 
 	}
+
+	
 	
 	static class EvalLib extends Eval{
 		String tableName = "";
