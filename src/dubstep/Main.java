@@ -1,39 +1,32 @@
 /*
-CREATE TABLE LINEITEM(ORDERKEY INT,PARTKEY INT,SUPPKEY INT,LINENUMBER INT,QUANTITY DECIMAL,EXTENDEDPRICE DECIMAL,DISCOUNT DECIMAL,TAX DECIMAL,RETURNFLAG CHAR(1),LINESTATUS CHAR(1),SHIPDATE DATE,COMMITDATE DATE,RECEIPTDATE DATE,SHIPINSTRUCT CHAR(25),SHIPMODE CHAR(10),PRIMARY KEY (ORDERKEY,LINENUMBER),INDEX LINEITEM_shipdate (shipdate));
-SELECT
-LINEITEM.RETURNFLAG,
-LINEITEM.LINESTATUS,
-SUM(LINEITEM.QUANTITY) AS SUM_QTY,
-SUM(LINEITEM.EXTENDEDPRICE) AS SUM_BASE_PRICE, 
-SUM(LINEITEM.EXTENDEDPRICE*(1-LINEITEM.DISCOUNT)) AS SUM_DISC_PRICE, 
-SUM(LINEITEM.EXTENDEDPRICE*(1-LINEITEM.DISCOUNT)*(1+LINEITEM.TAX)) AS SUM_CHARGE, 
-AVG(LINEITEM.QUANTITY) AS AVG_QTY,
-AVG(LINEITEM.EXTENDEDPRICE) AS AVG_PRICE,
-AVG(LINEITEM.DISCOUNT) AS AVG_DISC,
-COUNT(*) AS COUNT_ORDER
-FROM
-LINEITEM
-WHERE
-LINEITEM.SHIPDATE <= DATE('1998-08-10')
-GROUP BY 
-LINEITEM.RETURNFLAG, LINEITEM.LINESTATUS 
-ORDER BY
-LINEITEM.RETURNFLAG, LINEITEM.LINESTATUS;
+CREATE TABLE LINEITEM(ORDERKEY INT,PARTKEY INT,SUPPKEY INT,LINENUMBER INT,QUANTITY DECIMAL,EXTENDEDPRICE DECIMAL,DISCOUNT DECIMAL,TAX DECIMAL,RETURNFLAG CHAR(1),LINESTATUS CHAR(1),SHIPDATE DATE,COMMITDATE DATE,RECEIPTDATE DATE,SHIPINSTRUCT CHAR(25),SHIPMODE CHAR(10),PRIMARY KEY (ORDERKEY,LINENUMBER),INDEX LINEITEM_shipdate (shipdate)); SELECT LINEITEM.RETURNFLAG, LINEITEM.LINESTATUS, SUM(LINEITEM.QUANTITY) AS SUM_QTY, SUM(LINEITEM.EXTENDEDPRICE) AS SUM_BASE_PRICE, SUM(LINEITEM.EXTENDEDPRICE*(1-LINEITEM.DISCOUNT)) AS SUM_DISC_PRICE, SUM(LINEITEM.EXTENDEDPRICE*(1-LINEITEM.DISCOUNT)*(1+LINEITEM.TAX)) AS SUM_CHARGE, AVG(LINEITEM.QUANTITY) AS AVG_QTY, AVG(LINEITEM.EXTENDEDPRICE) AS AVG_PRICE, AVG(LINEITEM.DISCOUNT) AS AVG_DISC, COUNT(*) AS COUNT_ORDER FROM LINEITEM WHERE LINEITEM.SHIPDATE <= DATE('1998-08-10') GROUP BY LINEITEM.RETURNFLAG, LINEITEM.LINESTATUS ORDER BY LINEITEM.RETURNFLAG, LINEITEM.LINESTATUS;
+CREATE TABLE LINEITEM(ORDERKEY INT,PARTKEY INT,SUPPKEY INT,LINENUMBER INT,QUANTITY DECIMAL,EXTENDEDPRICE DECIMAL,DISCOUNT DECIMAL,TAX DECIMAL,RETURNFLAG CHAR(1),LINESTATUS CHAR(1),SHIPDATE DATE,COMMITDATE DATE,RECEIPTDATE DATE,SHIPINSTRUCT CHAR(25),SHIPMODE CHAR(10),PRIMARY KEY (ORDERKEY,LINENUMBER),INDEX LINEITEM_shipdate (shipdate));SELECT LINEITEM.EXTENDEDPRICE*1-LINEITEM.DISCOUNT from LINEITEM
  */
 package dubstep;
-import net.sf.jsqlparser.eval.Eval;
+//import net.sf.jsqlparser.eval.Eval;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.Set;
+import java.util.TreeSet;
+
 import net.sf.jsqlparser.expression.DateValue;
 import net.sf.jsqlparser.expression.DoubleValue;
 import net.sf.jsqlparser.expression.Expression;
@@ -133,7 +126,7 @@ public class Main {
 		//System.out.println(tableName);
 		Map<String,Integer> columnNameToIndexMap = new HashMap<String,Integer>();
 		List<ColumnDefinition> si = create.getColumnDefinitions();
-		ListIterator<ColumnDefinition> it = si.listIterator();
+		ListIterator<ColumnDefinition> it = si.listIterator(); 
 		ArrayList <String> dataTypes = new ArrayList <String>();
 
 		int i=0;
@@ -151,16 +144,27 @@ public class Main {
 	public static void getSelectedColumns(String tableName, Expression whereExpression) throws IOException, InvalidPrimitive, SQLException
 	{
 		//implement me
-
+		Map<String,ArrayList<Double>> groupByMap = new HashMap<String,ArrayList<Double>>();
+		Map<String,ArrayList<Integer>> groupByMapDenominators = new HashMap<String,ArrayList<Integer>>();
 		EvalLib e = new EvalLib(tableName);
-		List<Column> grpByColumns = plain.getGroupByColumnReferences();
+		List<Column> groupByColumns = plain.getGroupByColumnReferences();
+		ArrayList <Expression> selectlist = new ArrayList<Expression>();
 		List<OrderByElement> orderByElements = plain.getOrderByElements();
-		
+		List<SelectItem> selectItems = plain.getSelectItems();
 		String csvFile_local_copy = csvFile+tableName+".csv";
+		//PlainSelect ps = new CCJSqlParser(new StringReader("Select")).PlainSelect();
+		//"SELECT "+  +" FROM "+tableName
 		br = new BufferedReader(new FileReader(String.format(csvFile_local_copy)));
 		StringBuilder sb = new StringBuilder();	
-		List<SelectItem> selectItems = plain.getSelectItems();
+//		sb.append(String
+//				.join(
+//						System.getProperty("line.separator")
+//						,Files.readAllLines(Paths.get(csvFile_local_copy))
+//						)
+//				);
 		boolean isStarPresent = false;
+		boolean isAggregate=false;
+		List<SelectItem> functionItems = new ArrayList<SelectItem>();
 		for(SelectItem select: selectItems)
 		{
 			//System.out.println(select);
@@ -170,34 +174,199 @@ public class Main {
 				isStarPresent = true; break;
 				
 			}
+			
+			Expression expression = ((SelectExpressionItem)select).getExpression();
+			if(expression instanceof Function)
+			{
+				isAggregate = true;
+				selectlist.add(((Function) expression));
+			}
+			else{
+				selectlist.add(expression);
+			}
 		}
 		PrimitiveValue result=null;
 		boolean whereclauseabsent = (plain.getWhere()==null)?true:false;
 		
 		
-		
-		while((line=br.readLine())!=null)
-		{
-			//record = iter.next();
-			//System.out.println("Debug: "+line);
-			rowData = line.split("\\|",-1);
-			if(isStarPresent && e.eval(whereExpression).toBool()){
-				
-				sb.append(line+"\n");
-				
-			}
-			else if(whereclauseabsent || e.eval(whereExpression).toBool())
+		//
+		int index=0;
+		int groupRowCount=0;
+		String temp = "";
+		String groupKey = "";
+		if(whereclauseabsent){
+			while((line=br.readLine())!=null)
 			{
-				for(int i=0;i<selectItems.size()-1;i++)
+				rowData = line.split("\\|",-1);
+				for(int i=0;i<selectItems.size();i++)
 				{
 					result = e.eval(((SelectExpressionItem)selectItems.get(i)).getExpression());
 					sb.append(result.toRawString().concat("|"));
 				}
-				result = e.eval(((SelectExpressionItem)selectItems.get(selectItems.size()-1)).getExpression());
-				sb.append(result.toRawString()+"\n");
-				
 			}
 		}
+		else{
+			while((line=br.readLine())!=null)
+			{
+				rowData = line.split("\\|",-1);
+				if(e.eval(whereExpression).toBool())
+				{
+					groupKey=e.eval(groupByColumns.get(0)).toRawString()+"|"+e.eval(groupByColumns.get(1)).toRawString();
+					if(groupByMap.get(groupKey)==null){
+						groupByMapDenominators.put(groupKey,new ArrayList<Integer>());
+						groupByMap.put(groupKey,new ArrayList<Double>()); 
+						for(int i =0; i<selectlist.size();i++)
+						{
+							groupByMap.get(groupKey).add(0.0);
+							groupByMapDenominators.get(groupKey).add(0);
+						}
+					}
+					//if(e.eval(((SelectExpressionItem)selectItems.get(i)).getExpression()))
+					if(!isAggregate){
+						for(int i=0;i<selectItems.size()-1;i++)
+						{
+							result = e.eval(((SelectExpressionItem)selectItems.get(i)).getExpression());
+							sb.append(result.toRawString().concat("|"));
+						}
+					}
+					else{
+						
+						for(int i =0; i<selectlist.size();i++)
+						{
+							Function func = null;
+							Expression operand = null;
+							if(selectlist.get(i) instanceof Function){
+								func = (Function) selectlist.get(i);
+								switch (func.getName().toLowerCase()){
+								case "avg":										
+									result = e.eval(func.getParameters().getExpressions().get(0));
+									//index =columnNameToIndexMapping.get(tableName).get(operand.toString().split(".")[1]);
+									//temp =record.get(index);
+									if(result!=null)
+									{
+										groupByMap.get(groupKey).add(i, groupByMap.get(groupKey).get(i)+result.toDouble());
+										groupByMapDenominators.get(groupKey).add(i, groupByMapDenominators.get(groupKey).get(i)+1);
+										
+									}
+									break;
+								case "sum":
+									//SelectItem t= (SelectItem) func...getExpressions().get(0);
+									result = e.eval(func.getParameters().getExpressions().get(0));
+									if(result!=null)
+									{
+										groupByMap.get(groupKey).add(i, groupByMap.get(groupKey).get(i)+result.toDouble());
+									}
+									break;
+								case "count":
+									if(func.toString().toLowerCase().contains("count(*)"))
+									{
+										groupByMap.get(groupKey).add(i, groupByMap.get(groupKey).get(i)+1);
+									}
+									else{
+										operand = (Expression) func.getParameters().getExpressions().get(0);
+										result = e.eval(operand);
+										//index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+										temp =result.toRawString();//record.get(index);//(rowData[index]);
+										if(temp.trim().length() != 0)
+										{
+											//result = e.eval(operand);
+											if(e.eval(operand)!=null)
+											{
+												groupByMap.get(groupKey).add(i, groupByMap.get(groupKey).get(i)+1);
+											}
+										}
+									}
+									break;
+								case "min":
+									operand = (Expression) func.getParameters().getExpressions().get(0);
+									result = e.eval(operand);
+									//index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+									temp =result.toRawString();//record.get(index);//(rowData[index]);
+									if(temp.trim().length() != 0)
+									{
+										//result = e.eval(operand);
+										if(result.toDouble() < groupByMap.get(groupKey).get(i))
+										{
+											groupByMap.get(groupKey).add(i,result.toDouble());
+										}
+									}
+									break;
+								case "max":
+									operand = (Expression) func.getParameters().getExpressions().get(0);
+									result = e.eval(operand);
+									//index =columnNameToIndexMapping.get(tableName).get(operand.toString());
+									temp =result.toRawString();//record.get(index);//(rowData[index]);
+									if(temp.trim().length() != 0)
+									{
+										//result = e.eval(operand);
+										if(result.toDouble() > groupByMap.get(groupKey).get(i))
+										{
+											groupByMap.get(groupKey).add(i,result.toDouble());
+										}
+									}
+									break;
+								default:
+									break;
+
+								}
+
+							}
+//							else{// If the Column is not an aggregate column then simply get the value
+//								operand = selectlist.get(i);
+//								if(aggrStrMap[i]==null){
+//									aggrStrMap[i] =  e.eval(operand).toRawString();
+//								}
+//							}
+						}
+					}
+					
+					//result = e.eval(((SelectExpressionItem)selectItems.get(selectItems.size()-1)).getExpression());
+					//sb.append(result.toRawString()+"\n");
+					
+				}
+			}
+
+		}
+		if(isAggregate)
+		{
+			for(String outputGroupKey: groupByMap.keySet()){
+				
+				for(int i =0; i<selectlist.size();i++)
+				{
+					Function item = null;
+					if(selectlist.get(i) instanceof Function){
+						item = (Function) selectlist.get(i);
+						switch(item.getName()){
+						case "SUM":
+						case "MIN":
+						case "MAX":							
+							sb.append((result instanceof LongValue)?((groupByMap.get(outputGroupKey).get(i).longValue())+"|"):groupByMap.get(outputGroupKey).get(i)+"|");
+							break;
+						case "count":
+						case "COUNT":
+							sb.append(groupByMap.get(outputGroupKey).get(i).longValue()+"|");
+							break;
+						case "AVG":
+							sb.append((groupByMap.get(outputGroupKey).get(i)/groupByMapDenominators.get(outputGroupKey).get(i))+"|");
+							break;
+						default: break;
+						}
+					}
+//					else{// if its a Simple String Column or Simple Number Column
+//						sb.append(aggrStrMap[i]+"|");
+//					}
+				}
+				sb.append("\n");
+			}
+			
+		}
+		if(sb.length() >=2)
+		{
+			
+			sb.setLength(sb.length() - 1);
+			sb.append("\n");
+		}
+		System.out.println(groupByMap);
 		System.out.println(sb.toString());
 	}
 	
@@ -233,9 +402,9 @@ public class Main {
 		@Override
 		public PrimitiveValue eval(Column col) throws SQLException {
 			int index =columnNameToIndexMapping.get(tableName).get(col.getColumnName());
-			switch(columnDataTypes.get(tableName).get(index))
+			switch(columnDataTypes.get(tableName).get(index).toLowerCase())
 			{
-			case "String":
+			case "string":
 			case "varchar":
 			case "char":
 				return new StringValue(rowData[index]);
@@ -247,7 +416,15 @@ public class Main {
 				return new DoubleValue(rowData[index]);
 				//return new DoubleValue(record.get(index));
 			case "date":
-				return new DateValue(rowData[index]);
+				
+				Date date=null;
+				try {
+					date = new SimpleDateFormat("MM/dd/yyyy").parse(rowData[index]);
+				} catch (java.text.ParseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				return new DateValue(new SimpleDateFormat("yyyy-MM-dd").format(date));
 				//return new DateValue(record.get(index));
 			default:
 				return new StringValue(rowData[index]);
@@ -259,3 +436,4 @@ public class Main {
 
 }
 
+//CREATE TABLE LINEITEM(ORDERKEY INT,PARTKEY INT,SUPPKEY INT,LINENUMBER INT,QUANTITY DECIMAL,EXTENDEDPRICE DECIMAL,DISCOUNT DECIMAL,TAX DECIMAL,RETURNFLAG CHAR(1),LINESTATUS CHAR(1),SHIPDATE DATE,COMMITDATE DATE,RECEIPTDATE DATE,SHIPINSTRUCT CHAR(25),SHIPMODE CHAR(10),PRIMARY KEY (ORDERKEY,LINENUMBER),INDEX LINEITEM_shipdate (shipdate)); SELECT LINEITEM.RETURNFLAG, LINEITEM.LINESTATUS FROM LINEITEM WHERE LINEITEM.SHIPDATE <= DATE('1998-08-10') GROUP BY LINEITEM.RETURNFLAG, LINEITEM.LINESTATUS ORDER BY LINEITEM.RETURNFLAG, LINEITEM.LINESTATUS;
