@@ -17,6 +17,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -164,7 +165,6 @@ public class Main {
 //				);
 		boolean isStarPresent = false;
 		boolean isAggregate=false;
-		List<SelectItem> functionItems = new ArrayList<SelectItem>();
 		for(SelectItem select: selectItems)
 		{
 			//System.out.println(select);
@@ -244,23 +244,22 @@ public class Main {
 									//temp =record.get(index);
 									if(result!=null)
 									{
-										groupByMap.get(groupKey).add(i, groupByMap.get(groupKey).get(i)+result.toDouble());
-										groupByMapDenominators.get(groupKey).add(i, groupByMapDenominators.get(groupKey).get(i)+1);
+										groupByMap.get(groupKey).set(i, groupByMap.get(groupKey).get(i)+result.toDouble());
+										groupByMapDenominators.get(groupKey).set(i, groupByMapDenominators.get(groupKey).get(i)+1);
 										
 									}
 									break;
 								case "sum":
-									//SelectItem t= (SelectItem) func...getExpressions().get(0);
 									result = e.eval(func.getParameters().getExpressions().get(0));
 									if(result!=null)
 									{
-										groupByMap.get(groupKey).add(i, groupByMap.get(groupKey).get(i)+result.toDouble());
+										groupByMap.get(groupKey).set(i, groupByMap.get(groupKey).get(i)+result.toDouble());
 									}
 									break;
 								case "count":
 									if(func.toString().toLowerCase().contains("count(*)"))
 									{
-										groupByMap.get(groupKey).add(i, groupByMap.get(groupKey).get(i)+1);
+										groupByMap.get(groupKey).set(i, groupByMap.get(groupKey).get(i)+1);
 									}
 									else{
 										operand = (Expression) func.getParameters().getExpressions().get(0);
@@ -272,7 +271,7 @@ public class Main {
 											//result = e.eval(operand);
 											if(e.eval(operand)!=null)
 											{
-												groupByMap.get(groupKey).add(i, groupByMap.get(groupKey).get(i)+1);
+												groupByMap.get(groupKey).set(i, groupByMap.get(groupKey).get(i)+1);
 											}
 										}
 									}
@@ -287,7 +286,7 @@ public class Main {
 										//result = e.eval(operand);
 										if(result.toDouble() < groupByMap.get(groupKey).get(i))
 										{
-											groupByMap.get(groupKey).add(i,result.toDouble());
+											groupByMap.get(groupKey).set(i,result.toDouble());
 										}
 									}
 									break;
@@ -301,7 +300,7 @@ public class Main {
 										//result = e.eval(operand);
 										if(result.toDouble() > groupByMap.get(groupKey).get(i))
 										{
-											groupByMap.get(groupKey).add(i,result.toDouble());
+											groupByMap.get(groupKey).set(i,result.toDouble());
 										}
 									}
 									break;
@@ -329,7 +328,12 @@ public class Main {
 		}
 		if(isAggregate)
 		{
-			for(String outputGroupKey: groupByMap.keySet()){
+			//for orderby
+			List<String> keyList = new ArrayList<String>();
+			groupByMap.forEach((k,v)->keyList.add(k));
+			Collections.sort(keyList);
+			//
+			for(String outputGroupKey: keyList){
 				
 				for(int i =0; i<selectlist.size();i++)
 				{
@@ -356,6 +360,7 @@ public class Main {
 //						sb.append(aggrStrMap[i]+"|");
 //					}
 				}
+				sb.setLength(sb.length() - 1);
 				sb.append("\n");
 			}
 			
