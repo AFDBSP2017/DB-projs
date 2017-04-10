@@ -1,6 +1,7 @@
 /*
 CREATE TABLE LINEITEM(ORDERKEY INT,PARTKEY INT,SUPPKEY INT,LINENUMBER INT,QUANTITY DECIMAL,EXTENDEDPRICE DECIMAL,DISCOUNT DECIMAL,TAX DECIMAL,RETURNFLAG CHAR(1),LINESTATUS CHAR(1),SHIPDATE DATE,COMMITDATE DATE,RECEIPTDATE DATE,SHIPINSTRUCT CHAR(25),SHIPMODE CHAR(10),PRIMARY KEY (ORDERKEY,LINENUMBER),INDEX LINEITEM_shipdate (shipdate)); SELECT LINEITEM.RETURNFLAG, LINEITEM.LINESTATUS, SUM(LINEITEM.QUANTITY) AS SUM_QTY, SUM(LINEITEM.EXTENDEDPRICE) AS SUM_BASE_PRICE, SUM(LINEITEM.EXTENDEDPRICE*(1-LINEITEM.DISCOUNT)) AS SUM_DISC_PRICE, SUM(LINEITEM.EXTENDEDPRICE*(1-LINEITEM.DISCOUNT)*(1+LINEITEM.TAX)) AS SUM_CHARGE, AVG(LINEITEM.QUANTITY) AS AVG_QTY, AVG(LINEITEM.EXTENDEDPRICE) AS AVG_PRICE, AVG(LINEITEM.DISCOUNT) AS AVG_DISC, COUNT(*) AS COUNT_ORDER FROM LINEITEM WHERE LINEITEM.SHIPDATE <= DATE('1998-08-10') GROUP BY LINEITEM.RETURNFLAG, LINEITEM.LINESTATUS ORDER BY LINEITEM.RETURNFLAG, LINEITEM.LINESTATUS;
 CREATE TABLE LINEITEM(ORDERKEY INT,PARTKEY INT,SUPPKEY INT,LINENUMBER INT,QUANTITY DECIMAL,EXTENDEDPRICE DECIMAL,DISCOUNT DECIMAL,TAX DECIMAL,RETURNFLAG CHAR(1),LINESTATUS CHAR(1),SHIPDATE DATE,COMMITDATE DATE,RECEIPTDATE DATE,SHIPINSTRUCT CHAR(25),SHIPMODE CHAR(10),PRIMARY KEY (ORDERKEY,LINENUMBER),INDEX LINEITEM_shipdate (shipdate));SELECT LINEITEM.EXTENDEDPRICE*1-LINEITEM.DISCOUNT from LINEITEM
+SELECT IN_LINE.PARTKEY, IN_LINE.LINENUMBER FROM (SELECT (SUPPKEY+ORDERKEY) AS PARTKEY,(SUPPKEY*ORDERKEY) AS LINENUMBER FROM LINEITEM) IN_LINE
  */
 package dubstep;
 //import net.sf.jsqlparser.eval.Eval;
@@ -50,6 +51,7 @@ import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SelectBody;
 import net.sf.jsqlparser.statement.select.SelectExpressionItem;
 import net.sf.jsqlparser.statement.select.SelectItem;
+import net.sf.jsqlparser.statement.select.SubSelect;
 
 public class Main {
 
@@ -107,7 +109,13 @@ public class Main {
 		if(body instanceof PlainSelect){
 
 			plain = (PlainSelect)body;
-			Table table = (Table) plain.getFromItem();
+			Table table = null;
+			if(plain.getFromItem() instanceof SubSelect){
+				setSubSelectCalls((SubSelect) plain.getFromItem());
+			}
+			else{// if(plain.getFromItem() instanceof Table){
+				table = (Table) plain.getFromItem();
+			}
 			String tableName = table.getName();
 			getSelectedColumns(tableName, plain.getWhere());
 
@@ -117,6 +125,45 @@ public class Main {
 			throw new Exception("I can't understand body instanceof PlainSelect "+statement);
 		}
 		/** Do something with the select operator **/
+
+	}
+
+	public static void setSubSelectCalls(SubSelect subQuery) throws Exception{
+
+		SelectBody selBody = subQuery.getSelectBody();
+		PlainSelect subqPlain = null;
+		Table tb = new Table();
+		
+		if(selBody instanceof PlainSelect){
+			try {
+				subqPlain = (PlainSelect)selBody;
+				Table table = null;
+				if(subqPlain.getFromItem() instanceof SubSelect){
+					setSubSelectCalls((SubSelect) subqPlain.getFromItem());
+				}
+				else{// if(plain.getFromItem() instanceof Table){
+					table = (Table) subqPlain.getFromItem();
+				}
+				String tableName = table.getName();
+				getSelectedColumns(tableName, subqPlain.getWhere());
+
+			} catch (InvalidPrimitive e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		else {
+			throw new Exception("I can't understand body instanceof PlainSelect "+statement);
+		}
+
+		/** Do something with the select operator **/
+
 
 	}
 	public static void getColumnDataTypesAndMapColumnNameToIndex() throws SQLException
@@ -145,6 +192,7 @@ public class Main {
 	public static void getSelectedColumns(String tableName, Expression whereExpression) throws IOException, InvalidPrimitive, SQLException
 	{
 		//implement me
+		Map<String,ArrayList<String>> groupByStringMap = new HashMap<String,ArrayList<String>>();
 		Map<String,ArrayList<Double>> groupByMap = new HashMap<String,ArrayList<Double>>();
 		Map<String,ArrayList<Integer>> groupByMapDenominators = new HashMap<String,ArrayList<Integer>>();
 		EvalLib e = new EvalLib(tableName);
@@ -157,12 +205,12 @@ public class Main {
 		//"SELECT "+  +" FROM "+tableName
 		br = new BufferedReader(new FileReader(String.format(csvFile_local_copy)));
 		StringBuilder sb = new StringBuilder();	
-//		sb.append(String
-//				.join(
-//						System.getProperty("line.separator")
-//						,Files.readAllLines(Paths.get(csvFile_local_copy))
-//						)
-//				);
+		//		sb.append(String
+		//				.join(
+		//						System.getProperty("line.separator")
+		//						,Files.readAllLines(Paths.get(csvFile_local_copy))
+		//						)
+		//				);
 		boolean isStarPresent = false;
 		boolean isAggregate=false;
 		for(SelectItem select: selectItems)
@@ -170,11 +218,11 @@ public class Main {
 			//System.out.println(select);
 
 			if(select.toString().equals("*")){ 
-				
+
 				isStarPresent = true; break;
-				
+
 			}
-			
+
 			Expression expression = ((SelectExpressionItem)select).getExpression();
 			if(expression instanceof Function)
 			{
@@ -187,8 +235,8 @@ public class Main {
 		}
 		PrimitiveValue result=null;
 		boolean whereclauseabsent = (plain.getWhere()==null)?true:false;
-		
-		
+
+
 		//
 		int index=0;
 		int groupRowCount=0;
@@ -208,17 +256,24 @@ public class Main {
 		else{
 			while((line=br.readLine())!=null)
 			{
+				groupKey="";
 				rowData = line.split("\\|",-1);
 				if(e.eval(whereExpression).toBool())
 				{
-					groupKey=e.eval(groupByColumns.get(0)).toRawString()+"|"+e.eval(groupByColumns.get(1)).toRawString();
+					//Key Should be generated according to group order by
+					for(int i=0;i<groupByColumns.size()-1;i++){
+						groupKey+=e.eval(groupByColumns.get(i)).toRawString()+"|";
+					}
+					groupKey+=e.eval(groupByColumns.get(groupByColumns.size()-1)).toRawString();
 					if(groupByMap.get(groupKey)==null){
 						groupByMapDenominators.put(groupKey,new ArrayList<Integer>());
 						groupByMap.put(groupKey,new ArrayList<Double>()); 
+						groupByStringMap.put(groupKey,new ArrayList<String>());
 						for(int i =0; i<selectlist.size();i++)
 						{
 							groupByMap.get(groupKey).add(0.0);
 							groupByMapDenominators.get(groupKey).add(0);
+							groupByStringMap.get(groupKey).add("");
 						}
 					}
 					//if(e.eval(((SelectExpressionItem)selectItems.get(i)).getExpression()))
@@ -230,7 +285,7 @@ public class Main {
 						}
 					}
 					else{
-						
+
 						for(int i =0; i<selectlist.size();i++)
 						{
 							Function func = null;
@@ -246,7 +301,7 @@ public class Main {
 									{
 										groupByMap.get(groupKey).set(i, groupByMap.get(groupKey).get(i)+result.toDouble());
 										groupByMapDenominators.get(groupKey).set(i, groupByMapDenominators.get(groupKey).get(i)+1);
-										
+
 									}
 									break;
 								case "sum":
@@ -310,31 +365,30 @@ public class Main {
 								}
 
 							}
-//							else{// If the Column is not an aggregate column then simply get the value
-//								operand = selectlist.get(i);
-//								if(aggrStrMap[i]==null){
-//									aggrStrMap[i] =  e.eval(operand).toRawString();
-//								}
-//							}
+							else{// If the Column is not an aggregate column then simply get the value
+								operand = selectlist.get(i);
+								if(groupByStringMap.get(groupKey).get(i).trim().length()==0){
+									groupByStringMap.get(groupKey).set(i,e.eval(operand).toRawString());
+								}
+							}
 						}
 					}
-					
+
 					//result = e.eval(((SelectExpressionItem)selectItems.get(selectItems.size()-1)).getExpression());
 					//sb.append(result.toRawString()+"\n");
-					
+
 				}
 			}
 
 		}
 		if(isAggregate)
 		{
-			//for orderby
-			List<String> keyList = new ArrayList<String>();
-			groupByMap.forEach((k,v)->keyList.add(k));
+			//for orderby implement logic // later
+			List<String> keyList = new ArrayList<String>(groupByMap.keySet());
 			Collections.sort(keyList);
 			//
 			for(String outputGroupKey: keyList){
-				
+
 				for(int i =0; i<selectlist.size();i++)
 				{
 					Function item = null;
@@ -356,32 +410,32 @@ public class Main {
 						default: break;
 						}
 					}
-//					else{// if its a Simple String Column or Simple Number Column
-//						sb.append(aggrStrMap[i]+"|");
-//					}
+					else{// if its a Simple String Column or Simple Number Column
+						sb.append(groupByStringMap.get(outputGroupKey).get(i)+"|");
+					}
 				}
 				sb.setLength(sb.length() - 1);
 				sb.append("\n");
 			}
-			
+
 		}
 		if(sb.length() >=2)
 		{
-			
+
 			sb.setLength(sb.length() - 1);
 			sb.append("\n");
 		}
 		System.out.println(groupByMap);
 		System.out.println(sb.toString());
 	}
-	
+
 	public static Expression inExpression(InExpression exp){
-		
-		
+
+
 		return null;
-		
+
 	}
-	
+
 	public static void main(String[] args) throws Exception {
 		System.out.print("$>");
 		scan = new Scanner(System.in);
@@ -397,8 +451,8 @@ public class Main {
 
 	}
 
-	
-	
+
+
 	static class EvalLib extends Eval{
 		String tableName = "";
 		public EvalLib(String tableName){
@@ -421,7 +475,7 @@ public class Main {
 				return new DoubleValue(rowData[index]);
 				//return new DoubleValue(record.get(index));
 			case "date":
-				
+
 				Date date=null;
 				try {
 					date = new SimpleDateFormat("MM/dd/yyyy").parse(rowData[index]);
