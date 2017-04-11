@@ -2,6 +2,15 @@
 CREATE TABLE LINEITEM(ORDERKEY INT,PARTKEY INT,SUPPKEY INT,LINENUMBER INT,QUANTITY DECIMAL,EXTENDEDPRICE DECIMAL,DISCOUNT DECIMAL,TAX DECIMAL,RETURNFLAG CHAR(1),LINESTATUS CHAR(1),SHIPDATE DATE,COMMITDATE DATE,RECEIPTDATE DATE,SHIPINSTRUCT CHAR(25),SHIPMODE CHAR(10),PRIMARY KEY (ORDERKEY,LINENUMBER),INDEX LINEITEM_shipdate (shipdate)); SELECT LINEITEM.RETURNFLAG, LINEITEM.LINESTATUS, SUM(LINEITEM.QUANTITY) AS SUM_QTY, SUM(LINEITEM.EXTENDEDPRICE) AS SUM_BASE_PRICE, SUM(LINEITEM.EXTENDEDPRICE*(1-LINEITEM.DISCOUNT)) AS SUM_DISC_PRICE, SUM(LINEITEM.EXTENDEDPRICE*(1-LINEITEM.DISCOUNT)*(1+LINEITEM.TAX)) AS SUM_CHARGE, AVG(LINEITEM.QUANTITY) AS AVG_QTY, AVG(LINEITEM.EXTENDEDPRICE) AS AVG_PRICE, AVG(LINEITEM.DISCOUNT) AS AVG_DISC, COUNT(*) AS COUNT_ORDER FROM LINEITEM WHERE LINEITEM.SHIPDATE <= DATE('1998-08-10') GROUP BY LINEITEM.RETURNFLAG, LINEITEM.LINESTATUS ORDER BY LINEITEM.RETURNFLAG, LINEITEM.LINESTATUS;
 CREATE TABLE LINEITEM(ORDERKEY INT,PARTKEY INT,SUPPKEY INT,LINENUMBER INT,QUANTITY DECIMAL,EXTENDEDPRICE DECIMAL,DISCOUNT DECIMAL,TAX DECIMAL,RETURNFLAG CHAR(1),LINESTATUS CHAR(1),SHIPDATE DATE,COMMITDATE DATE,RECEIPTDATE DATE,SHIPINSTRUCT CHAR(25),SHIPMODE CHAR(10),PRIMARY KEY (ORDERKEY,LINENUMBER),INDEX LINEITEM_shipdate (shipdate));SELECT LINEITEM.EXTENDEDPRICE*1-LINEITEM.DISCOUNT from LINEITEM
 SELECT IN_LINE.PARTKEY, IN_LINE.LINENUMBER FROM (SELECT (SUPPKEY+ORDERKEY) AS PARTKEY,(SUPPKEY*ORDERKEY) AS LINENUMBER FROM LINEITEM) IN_LINE
+
+
+
+CREATE TABLE LINEITEM(ORDERKEY INT,PARTKEY INT,SUPPKEY INT,LINENUMBER INT,QUANTITY DECIMAL,EXTENDEDPRICE DECIMAL,DISCOUNT DECIMAL,TAX DECIMAL,RETURNFLAG CHAR(1),LINESTATUS CHAR(1),SHIPDATE DATE,COMMITDATE DATE,RECEIPTDATE DATE,SHIPINSTRUCT CHAR(25),SHIPMODE CHAR(10),PRIMARY KEY (ORDERKEY,LINENUMBER),INDEX LINEITEM_shipdate (shipdate)); 
+
+
+
+Select DARINGLY,POACH from EXPRESS;
+
 CREATE TABLE LINEITEM
 (ORDERKEY INT,PARTKEY INT,SUPPKEY INT
 ,LINENUMBER INT,QUANTITY DECIMAL,EXTENDEDPRICE DECIMAL
@@ -10,8 +19,10 @@ CREATE TABLE LINEITEM
 ,RECEIPTDATE DATE,SHIPINSTRUCT CHAR(25),SHIPMODE CHAR(10)
 ,PRIMARY KEY (ORDERKEY,LINENUMBER)
 ,INDEX LINEITEM_shipdate (shipdate));
+
 SELECT LINEITEM.EXTENDEDPRICE*1-LINEITEM.DISCOUNT 
 from LINEITEM where LINEITEM.DISCOUNT>0.002;
+
 SELECT
 LINEITEM.RETURNFLAG,
 LINEITEM.LINESTATUS,
@@ -95,6 +106,7 @@ import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.Statement;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import net.sf.jsqlparser.statement.create.table.CreateTable;
+import net.sf.jsqlparser.statement.select.FromItem;
 import net.sf.jsqlparser.statement.select.OrderByElement;
 import net.sf.jsqlparser.statement.select.PlainSelect;
 import net.sf.jsqlparser.statement.select.Select;
@@ -119,7 +131,13 @@ public class Main {
 	public static Select select;
 	public static SelectBody body;
 	public static CCJSqlParser parser;
-
+	public static Table globaltable = null;
+	public static String globaltableName =null;
+	public static ArrayList<String[]> records = new ArrayList<String[]>();
+	public static Iterator<String[]> rowIter = records.iterator();
+	public static ArrayList<String[]> subresults=new ArrayList<>();
+	
+	
 	public static void readQueries(String temp) throws ParseException
 	{
 
@@ -155,20 +173,23 @@ public class Main {
 		select = (Select)statement;
 		body = select.getSelectBody();
 
-
+			
+			
 		if(body instanceof PlainSelect){
 
 			plain = (PlainSelect)body;
-			Table table = null;
-			if(plain.getFromItem() instanceof SubSelect){
-				setSubSelectCalls((SubSelect) plain.getFromItem());
-			}
-			else{// if(plain.getFromItem() instanceof Table){
-				table = (Table) plain.getFromItem();
-			}
-			String tableName = table.getName();
-			getSelectedColumns(tableName, plain.getWhere());
+			PlainSelect Originalplain = plain;
 
+			if(plain.getFromItem() instanceof SubSelect)
+			{
+				getAllNestedSubQueriesFrom();
+			}
+			else
+			{// if(plain.getFromItem() instanceof Table){
+				globaltable = (Table) plain.getFromItem();
+				globaltableName = globaltable.getName();
+				getSelectedColumns(globaltableName, plain,plain.getWhere(),false);
+			}
 		}
 
 		else {
@@ -178,43 +199,34 @@ public class Main {
 
 	}
 
-	public static void setSubSelectCalls(SubSelect subQuery) throws Exception{
 
-		SelectBody selBody = subQuery.getSelectBody();
-		PlainSelect subqPlain = null;
-		Table tb = new Table();
+
+	public static void getAllNestedSubQueriesFrom() throws Exception{
+
+		System.out.println(plain);
+		System.out.println(plain.getSelectItems());
 		
-		if(selBody instanceof PlainSelect){
-			try {
-				subqPlain = (PlainSelect)selBody;
-				Table table = null;
-				if(subqPlain.getFromItem() instanceof SubSelect){
-					setSubSelectCalls((SubSelect) subqPlain.getFromItem());
-				}
-				else{// if(plain.getFromItem() instanceof Table){
-					table = (Table) subqPlain.getFromItem();
-					String tableName = table.getName();
-					getSelectedColumns(tableName, subqPlain.getWhere());
-				}
-			} catch (InvalidPrimitive e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (SQLException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
+		SubSelect x = (SubSelect) plain.getFromItem();
+		body = x.getSelectBody();
+		plain = (PlainSelect)body;
+		
+		if(plain.getFromItem() instanceof SubSelect)
+		{
+			getAllNestedSubQueriesFrom();
 		}
-		else {
-			throw new Exception("I can't understand body instanceof PlainSelect "+statement);
-		}
-
-		/** Do something with the select operator **/
-
-
+		else
+		{
+			System.out.println(plain);
+			System.out.println(plain.getSelectItems());
+			globaltable=(Table) plain.getFromItem();
+			globaltableName = globaltable.getName();
+			System.out.println(globaltableName);
+			getSelectedColumns(globaltableName, plain, plain.getWhere(),true);
+		}			
 	}
+	
+	
+	
 	public static void getColumnDataTypesAndMapColumnNameToIndex() throws SQLException
 	{
 
@@ -238,17 +250,17 @@ public class Main {
 		columnNameToIndexMapping.put(tableName,columnNameToIndexMap);
 	}
 
-	public static void getSelectedColumns(String tableName, Expression whereExpression) throws IOException, InvalidPrimitive, SQLException
+	public static void getSelectedColumns(String tableName,PlainSelect tempPlain  ,Expression whereExpression,boolean IsSubquery) throws IOException, InvalidPrimitive, SQLException
 	{
 		
 		Map<String,ArrayList<String>> groupByStringMap = new HashMap<String,ArrayList<String>>();
 		Map<String,ArrayList<Double>> groupByMap = new HashMap<String,ArrayList<Double>>();
 		Map<String,ArrayList<Integer>> groupByMapDenominators = new HashMap<String,ArrayList<Integer>>();
 		EvalLib e = new EvalLib(tableName);
-		List<Column> groupByColumns = plain.getGroupByColumnReferences();
+		List<Column> groupByColumns = tempPlain.getGroupByColumnReferences();
 		ArrayList <Expression> selectlist = new ArrayList<Expression>();
-		List<OrderByElement> orderByElements = plain.getOrderByElements();
-		List<SelectItem> selectItems = plain.getSelectItems();
+		List<OrderByElement> orderByElements = tempPlain.getOrderByElements();
+		List<SelectItem> selectItems = tempPlain.getSelectItems();
 		String csvFile_local_copy = csvFile+tableName+".csv";
 		//PlainSelect ps = new CCJSqlParser(new StringReader("Select")).PlainSelect();
 		//"SELECT "+  +" FROM "+tableName
@@ -284,7 +296,7 @@ public class Main {
 			}
 		}
 		PrimitiveValue result=null;
-		boolean whereclauseabsent = (plain.getWhere()==null)?true:false;
+		boolean whereclauseabsent = (tempPlain.getWhere()==null)?true:false;
 
 
 		//
@@ -305,6 +317,7 @@ public class Main {
 			lineCounter =0;
 			while((line=br.readLine())!=null)
 			{
+				
 				lineCounter++;
 				rowData = line.split("\\|",-1);
 				for(int i=0;i<selectItems.size();i++)
@@ -314,7 +327,7 @@ public class Main {
 				}
 				sb.setLength(sb.length() - 1);
 				sb.append("\n");
-				if(lineCounter==plain.getLimit().getRowCount())
+				if(lineCounter==tempPlain.getLimit().getRowCount())
 					break;
 			}
 		}
@@ -326,6 +339,7 @@ public class Main {
 				rowData = line.split("\\|",-1);
 				if(e.eval(whereExpression).toBool())
 				{
+					
 					lineCounter++;
 					if(groupByColumns!=null){
 						for(int i=0;i<groupByColumns.size()-1;i++){
@@ -356,7 +370,7 @@ public class Main {
 						}
 						sb.setLength(sb.length() - 1);
 						sb.append("\n");
-						if(lineCounter==plain.getLimit().getRowCount())
+						if(lineCounter==tempPlain.getLimit().getRowCount())
 							break;
 					}
 					else{
@@ -572,4 +586,3 @@ public class Main {
 		}
 	}
 }
-
