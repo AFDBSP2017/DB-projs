@@ -2,6 +2,7 @@
 CREATE TABLE LINEITEM(ORDERKEY INT,PARTKEY INT,SUPPKEY INT,LINENUMBER INT,QUANTITY DECIMAL,EXTENDEDPRICE DECIMAL,DISCOUNT DECIMAL,TAX DECIMAL,RETURNFLAG CHAR(1),LINESTATUS CHAR(1),SHIPDATE DATE,COMMITDATE DATE,RECEIPTDATE DATE,SHIPINSTRUCT CHAR(25),SHIPMODE CHAR(10),PRIMARY KEY (ORDERKEY,LINENUMBER),INDEX LINEITEM_shipdate (shipdate)); SELECT LINEITEM.RETURNFLAG, LINEITEM.LINESTATUS, SUM(LINEITEM.QUANTITY) AS SUM_QTY, SUM(LINEITEM.EXTENDEDPRICE) AS SUM_BASE_PRICE, SUM(LINEITEM.EXTENDEDPRICE*(1-LINEITEM.DISCOUNT)) AS SUM_DISC_PRICE, SUM(LINEITEM.EXTENDEDPRICE*(1-LINEITEM.DISCOUNT)*(1+LINEITEM.TAX)) AS SUM_CHARGE, AVG(LINEITEM.QUANTITY) AS AVG_QTY, AVG(LINEITEM.EXTENDEDPRICE) AS AVG_PRICE, AVG(LINEITEM.DISCOUNT) AS AVG_DISC, COUNT(*) AS COUNT_ORDER FROM LINEITEM WHERE LINEITEM.SHIPDATE <= DATE('1998-08-10') GROUP BY LINEITEM.RETURNFLAG, LINEITEM.LINESTATUS ORDER BY LINEITEM.RETURNFLAG, LINEITEM.LINESTATUS;
 CREATE TABLE LINEITEM(ORDERKEY INT,PARTKEY INT,SUPPKEY INT,LINENUMBER INT,QUANTITY DECIMAL,EXTENDEDPRICE DECIMAL,DISCOUNT DECIMAL,TAX DECIMAL,RETURNFLAG CHAR(1),LINESTATUS CHAR(1),SHIPDATE DATE,COMMITDATE DATE,RECEIPTDATE DATE,SHIPINSTRUCT CHAR(25),SHIPMODE CHAR(10),PRIMARY KEY (ORDERKEY,LINENUMBER),INDEX LINEITEM_shipdate (shipdate));SELECT LINEITEM.EXTENDEDPRICE*1-LINEITEM.DISCOUNT from LINEITEM
 SELECT IN_LINE.PARTKEY, IN_LINE.LINENUMBER FROM (SELECT (SUPPKEY+ORDERKEY) AS PARTKEY,(SUPPKEY*ORDERKEY) AS LINENUMBER FROM LINEITEM) IN_LINE
+CREATE TABLE LINEITEM(ORDERKEY INT,PARTKEY INT,SUPPKEY INT,LINENUMBER INT,QUANTITY DECIMAL,EXTENDEDPRICE DECIMAL,DISCOUNT DECIMAL,TAX DECIMAL,RETURNFLAG CHAR(1),LINESTATUS CHAR(1),SHIPDATE DATE,COMMITDATE DATE,RECEIPTDATE DATE,SHIPINSTRUCT CHAR(25),SHIPMODE CHAR(10),PRIMARY KEY (ORDERKEY,LINENUMBER),INDEX LINEITEM_shipdate (shipdate));SELECT LINEITEM.EXTENDEDPRICE*1-LINEITEM.DISCOUNT from LINEITEM where LINEITEM.DISCOUNT>0.002
  */
 package dubstep;
 //import net.sf.jsqlparser.eval.Eval;
@@ -143,10 +144,9 @@ public class Main {
 				}
 				else{// if(plain.getFromItem() instanceof Table){
 					table = (Table) subqPlain.getFromItem();
+					String tableName = table.getName();
+					getSelectedColumns(tableName, subqPlain.getWhere());
 				}
-				String tableName = table.getName();
-				getSelectedColumns(tableName, subqPlain.getWhere());
-
 			} catch (InvalidPrimitive e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -191,7 +191,7 @@ public class Main {
 
 	public static void getSelectedColumns(String tableName, Expression whereExpression) throws IOException, InvalidPrimitive, SQLException
 	{
-		//implement me
+		
 		Map<String,ArrayList<String>> groupByStringMap = new HashMap<String,ArrayList<String>>();
 		Map<String,ArrayList<Double>> groupByMap = new HashMap<String,ArrayList<Double>>();
 		Map<String,ArrayList<Integer>> groupByMapDenominators = new HashMap<String,ArrayList<Integer>>();
@@ -205,6 +205,7 @@ public class Main {
 		//"SELECT "+  +" FROM "+tableName
 		br = new BufferedReader(new FileReader(String.format(csvFile_local_copy)));
 		StringBuilder sb = new StringBuilder();	
+		
 		//		sb.append(String
 		//				.join(
 		//						System.getProperty("line.separator")
@@ -242,7 +243,15 @@ public class Main {
 		int groupRowCount=0;
 		String temp = "";
 		String groupKey = "";
-		if(whereclauseabsent){
+		if(isStarPresent && whereclauseabsent){
+			sb.append(String
+							.join(
+									System.getProperty("line.separator")
+									,Files.readAllLines(Paths.get(csvFile_local_copy))
+									)
+							);
+		}
+		else if(whereclauseabsent){
 			while((line=br.readLine())!=null)
 			{
 				rowData = line.split("\\|",-1);
@@ -251,38 +260,45 @@ public class Main {
 					result = e.eval(((SelectExpressionItem)selectItems.get(i)).getExpression());
 					sb.append(result.toRawString().concat("|"));
 				}
+				sb.setLength(sb.length() - 1);
+				sb.append("\n");
 			}
 		}
-		else{
+		else {
 			while((line=br.readLine())!=null)
 			{
 				groupKey="";
 				rowData = line.split("\\|",-1);
 				if(e.eval(whereExpression).toBool())
 				{
-					//Key Should be generated according to group order by
-					for(int i=0;i<groupByColumns.size()-1;i++){
-						groupKey+=e.eval(groupByColumns.get(i)).toRawString()+"|";
-					}
-					groupKey+=e.eval(groupByColumns.get(groupByColumns.size()-1)).toRawString();
-					if(groupByMap.get(groupKey)==null){
-						groupByMapDenominators.put(groupKey,new ArrayList<Integer>());
-						groupByMap.put(groupKey,new ArrayList<Double>()); 
-						groupByStringMap.put(groupKey,new ArrayList<String>());
-						for(int i =0; i<selectlist.size();i++)
-						{
-							groupByMap.get(groupKey).add(0.0);
-							groupByMapDenominators.get(groupKey).add(0);
-							groupByStringMap.get(groupKey).add("");
+					if(groupByColumns!=null){
+						for(int i=0;i<groupByColumns.size()-1;i++){
+							groupKey+=e.eval(groupByColumns.get(i)).toRawString()+"|";
+						}
+						groupKey+=e.eval(groupByColumns.get(groupByColumns.size()-1)).toRawString();
+						if(groupByMap.get(groupKey)==null){
+							groupByMapDenominators.put(groupKey,new ArrayList<Integer>());
+							groupByMap.put(groupKey,new ArrayList<Double>()); 
+							groupByStringMap.put(groupKey,new ArrayList<String>());
+							for(int i =0; i<selectlist.size();i++)
+							{
+								groupByMap.get(groupKey).add(0.0);
+								groupByMapDenominators.get(groupKey).add(0);
+								groupByStringMap.get(groupKey).add("");
+							}
 						}
 					}
+					//Key Should be generated according to group order by
+					
 					//if(e.eval(((SelectExpressionItem)selectItems.get(i)).getExpression()))
 					if(!isAggregate){
-						for(int i=0;i<selectItems.size()-1;i++)
+						for(int i=0;i<selectItems.size();i++)
 						{
 							result = e.eval(((SelectExpressionItem)selectItems.get(i)).getExpression());
 							sb.append(result.toRawString().concat("|"));
 						}
+						sb.setLength(sb.length() - 1);
+						sb.append("\n");
 					}
 					else{
 
@@ -425,8 +441,9 @@ public class Main {
 			sb.setLength(sb.length() - 1);
 			sb.append("\n");
 		}
-		System.out.println(groupByMap);
-		System.out.println(sb.toString());
+		//System.out.println(groupByMap);
+		//sb.setLength(sb.length() - 1);
+		System.out.println(sb.toString());//to print normal queries
 	}
 
 	public static Expression inExpression(InExpression exp){
