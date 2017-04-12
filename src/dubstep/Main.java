@@ -10,6 +10,29 @@ CREATE TABLE LINEITEM
 ,RECEIPTDATE DATE,SHIPINSTRUCT CHAR(25),SHIPMODE CHAR(10)
 ,PRIMARY KEY (ORDERKEY,LINENUMBER)
 ,INDEX LINEITEM_shipdate (shipdate));
+SELECT
+*
+FROM
+LINEITEM
+WHERE
+LINEITEM.SHIPDATE >= DATE('1995-01-01')
+AND LINEITEM.SHIPDATE < DATE ('1996-01-01')
+AND LINEITEM.DISCOUNT > 0.08 AND LINEITEM.DISCOUNT < 0.1 
+AND LINEITEM.QUANTITY < 25;
+
+
+
+
+SELECT
+SUM(LINEITEM.EXTENDEDPRICE*LINEITEM.DISCOUNT) AS REVENUE
+FROM
+LINEITEM
+WHERE
+LINEITEM.SHIPDATE >= DATE('1994-01-01')
+AND LINEITEM.SHIPDATE < DATE ('1995-01-01')
+AND LINEITEM.DISCOUNT > 0.01 AND LINEITEM.DISCOUNT < 0.03 
+AND LINEITEM.QUANTITY < 25;
+
 SELECT LINEITEM.EXTENDEDPRICE*1-LINEITEM.DISCOUNT 
 from LINEITEM where LINEITEM.DISCOUNT>0.002;
 SELECT
@@ -68,6 +91,7 @@ import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -77,6 +101,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.Set;
+import java.util.Timer;
 import java.util.TreeSet;
 
 import net.sf.jsqlparser.expression.DateValue;
@@ -123,14 +148,23 @@ public class Main {
 	public static void readQueries(String temp) throws ParseException
 	{
 
+		testRead();
 		StringReader input = new StringReader(temp);
 		parser = new CCJSqlParser(input);
 		statement = parser.Statement();  
 	}
 
+	public static void testRead(){
+		StringReader s1 = new StringReader("Select A from B where X = 5");
+		StringReader s2 = new StringReader("Select A from B where X = 6");
+		StringReader s3 = new StringReader("Select A from B where X = 7");
+		StringReader s4 = new StringReader("Select A from B where X = 8");
+		 
+	}
 	public static void parseQueries() throws Exception
 	{
 
+		
 		while(statement != null)
 		{
 			if(statement instanceof CreateTable)
@@ -238,6 +272,11 @@ public class Main {
 		columnNameToIndexMapping.put(tableName,columnNameToIndexMap);
 	}
 
+	
+	
+	
+	
+	
 	public static void getSelectedColumns(String tableName, Expression whereExpression) throws IOException, InvalidPrimitive, SQLException
 	{
 		
@@ -248,6 +287,7 @@ public class Main {
 		List<Column> groupByColumns = plain.getGroupByColumnReferences();
 		ArrayList <Expression> selectlist = new ArrayList<Expression>();
 		List<OrderByElement> orderByElements = plain.getOrderByElements();
+		
 		List<SelectItem> selectItems = plain.getSelectItems();
 		String csvFile_local_copy = csvFile+tableName+".csv";
 		//PlainSelect ps = new CCJSqlParser(new StringReader("Select")).PlainSelect();
@@ -287,7 +327,32 @@ public class Main {
 		boolean whereclauseabsent = (plain.getWhere()==null)?true:false;
 
 
-		//
+		ArrayList<String> avoidDuplicates = new ArrayList<String>();
+		ArrayList<Expression> l = new ArrayList<Expression>();
+		//Remove Duplicates
+		
+		Map<String,Boolean> duplicateMap = new HashMap<String,Boolean>();  
+		for(int idx = 0 ; idx<selectlist.size();idx++)
+		{
+			//duplicateMap.put(selectlist.get(2).toString(),false);
+			if(duplicateMap.get(selectlist.get(idx).toString().replace("SUM(", "AVG("))!=null)
+			{				
+				duplicateMap.put(selectlist.get(idx).toString(),true);
+			}
+			else if(duplicateMap.get(selectlist.get(idx).toString().replace("AVG(", "SUM("))!=null)
+			{
+				duplicateMap.put(selectlist.get(idx).toString().replace("AVG(", "SUM("),true);
+			}
+			else {
+				
+			}
+		}
+		Map<String,Double> aggrMap = new HashMap<String,Double>(); 
+		aggrMap.put("SUM",0.0);
+		aggrMap.put("COUNT", 0.0);
+		aggrMap.put("MIN", 0.0);
+		aggrMap.put("MAX", 0.0);
+		boolean simplePrint = false;
 		int index=0;
 		int groupRowCount=0;
 		String temp = "";
@@ -312,14 +377,42 @@ public class Main {
 					result = e.eval(((SelectExpressionItem)selectItems.get(i)).getExpression());
 					sb.append(result.toRawString().concat("|"));
 				}
-				sb.setLength(sb.length() - 1);
+				sb.setLength(sb.length() - 1); 
 				sb.append("\n");
 				if(lineCounter==plain.getLimit().getRowCount())
 					break;
 			}
 		}
-		else {
+		else if(isStarPresent && !whereclauseabsent){
+			lineCounter=0;
+			while((line=br.readLine())!=null)
+			{
+				lineCounter++;
+				rowData = line.split("\\|",-1);
+				if(e.eval(whereExpression).toBool()){
+					sb.append(line); 
+					sb.append("\n");
+					if(plain.getLimit()!=null && lineCounter==plain.getLimit().getRowCount())
+						break;
+				}				
+				
+			}
+		}
+		else if(isAggregate && (groupByColumns==null)){// if no group by but aggregate is present // old code			
+			Aggregate.setColumnDataTypes(columnDataTypes);
+			Aggregate.setColumnNameToIndexMapping(columnNameToIndexMapping);
+			Aggregate.setPlain(plain);
+			Aggregate.getSelectedColumns(tableName, whereExpression);
+			simplePrint = true;
+		}
+		else {//if group by is present and where is present
 			lineCounter = 0;
+			//Timer t = new Timer();
+			Date d = new Date();
+			
+			int hrs = d.getHours();
+			int min = d.getMinutes();
+			int sec = d.getSeconds();
 			while((line=br.readLine())!=null)
 			{
 				groupKey="";
@@ -327,6 +420,7 @@ public class Main {
 				if(e.eval(whereExpression).toBool())
 				{
 					lineCounter++;
+					//System.out.println(lineCounter);
 					if(groupByColumns!=null){
 						for(int i=0;i<groupByColumns.size()-1;i++){
 							groupKey+=e.eval(groupByColumns.get(i)).toRawString()+"|";
@@ -347,7 +441,7 @@ public class Main {
 					//Key Should be generated according to group order by
 					
 					//if(e.eval(((SelectExpressionItem)selectItems.get(i)).getExpression()))
-					if(!isAggregate){
+					if(!isAggregate && (groupByColumns==null)){
 						for(int i=0;i<selectItems.size();i++)
 						{
 							
@@ -356,7 +450,7 @@ public class Main {
 						}
 						sb.setLength(sb.length() - 1);
 						sb.append("\n");
-						if(lineCounter==plain.getLimit().getRowCount())
+						if(plain.getLimit()!=null && lineCounter==plain.getLimit().getRowCount())
 							break;
 					}
 					else{
@@ -367,27 +461,24 @@ public class Main {
 							Expression operand = null;
 							if(selectlist.get(i) instanceof Function){
 								func = (Function) selectlist.get(i);
-								switch (func.getName().toLowerCase()){
-								case "avg":										
+								switch (func.getName().charAt(2)){
+								case 'G'://AVG										
 									result = e.eval(func.getParameters().getExpressions().get(0));
-									//index =columnNameToIndexMapping.get(tableName).get(operand.toString().split(".")[1]);
-									//temp =record.get(index);
 									if(result!=null)
 									{
 										groupByMap.get(groupKey).set(i, groupByMap.get(groupKey).get(i)+result.toDouble());
 										groupByMapDenominators.get(groupKey).set(i, groupByMapDenominators.get(groupKey).get(i)+1);
-
 									}
 									break;
-								case "sum":
+								case 'M'://SUM
 									result = e.eval(func.getParameters().getExpressions().get(0));
 									if(result!=null)
 									{
 										groupByMap.get(groupKey).set(i, groupByMap.get(groupKey).get(i)+result.toDouble());
 									}
 									break;
-								case "count":
-									if(func.toString().toLowerCase().contains("count(*)"))
+								case 'U'://COUNT
+									if(func.toString().contains("(*)"))
 									{
 										groupByMap.get(groupKey).set(i, groupByMap.get(groupKey).get(i)+1);
 									}
@@ -406,7 +497,7 @@ public class Main {
 										}
 									}
 									break;
-								case "min":
+								case 'N'://MIN
 									operand = (Expression) func.getParameters().getExpressions().get(0);
 									result = e.eval(operand);
 									//index =columnNameToIndexMapping.get(tableName).get(operand.toString());
@@ -420,7 +511,7 @@ public class Main {
 										}
 									}
 									break;
-								case "max":
+								case 'X'://MAX
 									operand = (Expression) func.getParameters().getExpressions().get(0);
 									result = e.eval(operand);
 									//index =columnNameToIndexMapping.get(tableName).get(operand.toString());
@@ -453,9 +544,13 @@ public class Main {
 
 				}
 			}
-
+			d = new Date();
+			int hrs1 = d.getHours();
+			int min1 = d.getMinutes();
+			int sec1 = d.getSeconds();
+			//System.out.println("time to execute gropu by = "+ (hrs1-hrs)+":"+(min1-min)+":"+(sec1-sec));
 		}
-		if(isAggregate)
+		if(isAggregate && !simplePrint)
 		{
 			//for orderby implement logic // later
 			List<String> keyList = new ArrayList<String>(groupByMap.keySet());
@@ -491,19 +586,25 @@ public class Main {
 				sb.setLength(sb.length() - 1);
 				sb.append("\n");
 			}
+			if(sb.length() >=2)
+			{
 
+				sb.setLength(sb.length() - 1);
+				sb.append("\n");
+			}
 		}
-		if(sb.length() >=2)
-		{
-
-			sb.setLength(sb.length() - 1);
-			sb.append("\n");
+		else{
+			if(orderByElements!=null && orderByElements.size()>0){
+				orderElements();
+			}
 		}
 		//System.out.println(groupByMap);
 		//sb.setLength(sb.length() - 1);
 		System.out.println(sb.toString());//to print normal queries
 	}
-
+	public static void orderElements(){
+		
+	}
 	public static Expression inExpression(InExpression exp){
 
 
