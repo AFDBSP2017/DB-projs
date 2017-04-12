@@ -18,7 +18,8 @@ WHERE
 LINEITEM.SHIPDATE >= DATE('1995-01-01')
 AND LINEITEM.SHIPDATE < DATE ('1996-01-01')
 AND LINEITEM.DISCOUNT > 0.08 AND LINEITEM.DISCOUNT < 0.1 
-AND LINEITEM.QUANTITY < 25;
+AND LINEITEM.QUANTITY < 25
+LIMIT 10;
 
 
 
@@ -387,9 +388,10 @@ public class Main {
 			lineCounter=0;
 			while((line=br.readLine())!=null)
 			{
-				lineCounter++;
+				
 				rowData = line.split("\\|",-1);
 				if(e.eval(whereExpression).toBool()){
+					lineCounter++;
 					sb.append(line); 
 					sb.append("\n");
 					if(plain.getLimit()!=null && lineCounter==plain.getLimit().getRowCount())
