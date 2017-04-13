@@ -10,8 +10,29 @@ CREATE TABLE LINEITEM
 ,RECEIPTDATE DATE,SHIPINSTRUCT CHAR(25),SHIPMODE CHAR(10)
 ,PRIMARY KEY (ORDERKEY,LINENUMBER)
 ,INDEX LINEITEM_shipdate (shipdate));
+CREATE TABLE LINEITEM2
+(ORDERKEY INT,PARTKEY INT,SUPPKEY INT
+,LINENUMBER INT,QUANTITY DECIMAL,EXTENDEDPRICE DECIMAL
+,DISCOUNT DECIMAL,TAX DECIMAL,RETURNFLAG CHAR(1)
+,LINESTATUS CHAR(1),SHIPDATE DATE,COMMITDATE DATE
+,RECEIPTDATE DATE,SHIPINSTRUCT CHAR(25),SHIPMODE CHAR(10)
+,PRIMARY KEY (ORDERKEY,LINENUMBER)
+,INDEX LINEITEM_shipdate (shipdate));
 SELECT
-*
+SUM(LINEITEM2.EXTENDEDPRICE*LINEITEM2.DISCOUNT) AS REVENUE
+FROM
+LINEITEM2
+WHERE
+LINEITEM2.SHIPDATE >= DATE('1995-01-01')
+AND LINEITEM2.SHIPDATE < DATE ('1996-01-01')
+AND LINEITEM2.DISCOUNT > 0.08 AND LINEITEM2.DISCOUNT < 0.1 
+AND LINEITEM2.QUANTITY < 25;
+
+
+
+
+SELECT
+ *
 FROM
 LINEITEM
 WHERE
@@ -21,7 +42,7 @@ AND LINEITEM.DISCOUNT > 0.08 AND LINEITEM.DISCOUNT < 0.1
 AND LINEITEM.QUANTITY < 25
 LIMIT 10;
 
-
+CREATE TABLE LINEITEM (ORDERKEY INT,PARTKEY INT,SUPPKEY INT ,LINENUMBER INT,QUANTITY DECIMAL,EXTENDEDPRICE DECIMAL ,DISCOUNT DECIMAL,TAX DECIMAL,RETURNFLAG CHAR(1) ,LINESTATUS CHAR(1),SHIPDATE DATE,COMMITDATE DATE ,RECEIPTDATE DATE,SHIPINSTRUCT CHAR(25),SHIPMODE CHAR(10) ,PRIMARY KEY (ORDERKEY,LINENUMBER) ,INDEX LINEITEM_shipdate (shipdate)); SELECT SUM(LINEITEM.EXTENDEDPRICE*LINEITEM.DISCOUNT) AS REVENUE FROM LINEITEM WHERE LINEITEM.SHIPDATE >= DATE('1994-01-01') AND LINEITEM.SHIPDATE < DATE ('1995-01-01') AND LINEITEM.DISCOUNT > 0.01 AND LINEITEM.DISCOUNT < 0.03 AND LINEITEM.QUANTITY < 25;
 
 
 SELECT
@@ -105,6 +126,8 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TreeSet;
 
+import javax.swing.plaf.synth.SynthSeparatorUI;
+
 import net.sf.jsqlparser.expression.DateValue;
 import net.sf.jsqlparser.expression.DoubleValue;
 import net.sf.jsqlparser.expression.Expression;
@@ -131,22 +154,22 @@ import net.sf.jsqlparser.statement.select.SubSelect;
 
 public class Main {
 
-	public static Scanner scan;
-	static String[] rowData = null; 
-	public static BufferedReader br = null;	
-	static Reader in = null;
-	public static String csvFile = "src\\dubstep\\data\\";
+	private static Scanner scan;
+	private String[] rowData = null; 
+	private BufferedReader br = null;	
+	private Reader in = null;
+	private String csvFile = "src\\dubstep\\data\\";
 	//public static String csvFile = "data/";
-	public static String line = "";
-	public static Statement statement;
-	public static PlainSelect plain;
-	public static Map<String,ArrayList <String>> columnDataTypes = new HashMap<String,ArrayList <String>>();
-	public static Map<String,Map<String,Integer>> columnNameToIndexMapping = new HashMap<String,Map<String,Integer>>();
-	public static Select select;
-	public static SelectBody body;
-	public static CCJSqlParser parser;
+	private  String line = "";
+	private  Statement statement;
+	private  PlainSelect plain;
+	private  Map<String,ArrayList <String>> columnDataTypes = new HashMap<String,ArrayList <String>>();
+	private  Map<String,Map<String,Integer>> columnNameToIndexMapping = new HashMap<String,Map<String,Integer>>();
+	private  Select select;
+	private  SelectBody body;
+	private  CCJSqlParser parser;
 
-	public static void readQueries(String temp) throws ParseException
+	public  void readQueries(String temp) throws ParseException
 	{
 
 		testRead();
@@ -154,18 +177,18 @@ public class Main {
 		parser = new CCJSqlParser(input);
 		statement = parser.Statement();  
 	}
-
-	public static void testRead(){
+	
+	public  void testRead(){
 		StringReader s1 = new StringReader("Select A from B where X = 5");
 		StringReader s2 = new StringReader("Select A from B where X = 6");
 		StringReader s3 = new StringReader("Select A from B where X = 7");
 		StringReader s4 = new StringReader("Select A from B where X = 8");
-		 
+
 	}
-	public static void parseQueries() throws Exception
+	public  void parseQueries() throws Exception
 	{
 
-		
+
 		while(statement != null)
 		{
 			if(statement instanceof CreateTable)
@@ -184,7 +207,7 @@ public class Main {
 			statement = parser.Statement();
 		}
 	}
-	public static void parseSelectStatement() throws Exception
+	public  void parseSelectStatement() throws Exception
 	{
 
 		select = (Select)statement;
@@ -213,12 +236,12 @@ public class Main {
 
 	}
 
-	public static void setSubSelectCalls(SubSelect subQuery) throws Exception{
+	public  void setSubSelectCalls(SubSelect subQuery) throws Exception{
 
 		SelectBody selBody = subQuery.getSelectBody();
 		PlainSelect subqPlain = null;
 		Table tb = new Table();
-		
+
 		if(selBody instanceof PlainSelect){
 			try {
 				subqPlain = (PlainSelect)selBody;
@@ -250,7 +273,7 @@ public class Main {
 
 
 	}
-	public static void getColumnDataTypesAndMapColumnNameToIndex() throws SQLException
+	public  void getColumnDataTypesAndMapColumnNameToIndex() throws SQLException
 	{
 
 		CreateTable create = (CreateTable)statement;
@@ -273,14 +296,14 @@ public class Main {
 		columnNameToIndexMapping.put(tableName,columnNameToIndexMap);
 	}
 
-	
-	
-	
-	
-	
-	public static void getSelectedColumns(String tableName, Expression whereExpression) throws IOException, InvalidPrimitive, SQLException
+
+
+
+
+
+	public  void getSelectedColumns(String tableName, Expression whereExpression) throws IOException, InvalidPrimitive, SQLException
 	{
-		
+
 		Map<String,ArrayList<String>> groupByStringMap = new HashMap<String,ArrayList<String>>();
 		Map<String,ArrayList<Double>> groupByMap = new HashMap<String,ArrayList<Double>>();
 		Map<String,ArrayList<Integer>> groupByMapDenominators = new HashMap<String,ArrayList<Integer>>();
@@ -288,14 +311,14 @@ public class Main {
 		List<Column> groupByColumns = plain.getGroupByColumnReferences();
 		ArrayList <Expression> selectlist = new ArrayList<Expression>();
 		List<OrderByElement> orderByElements = plain.getOrderByElements();
-		
+
 		List<SelectItem> selectItems = plain.getSelectItems();
 		String csvFile_local_copy = csvFile+tableName+".csv";
 		//PlainSelect ps = new CCJSqlParser(new StringReader("Select")).PlainSelect();
 		//"SELECT "+  +" FROM "+tableName
 		br = new BufferedReader(new FileReader(String.format(csvFile_local_copy)));
 		StringBuilder sb = new StringBuilder();	
-		
+
 		//		sb.append(String
 		//				.join(
 		//						System.getProperty("line.separator")
@@ -331,7 +354,7 @@ public class Main {
 		ArrayList<String> avoidDuplicates = new ArrayList<String>();
 		ArrayList<Expression> l = new ArrayList<Expression>();
 		//Remove Duplicates
-		
+
 		Map<String,Boolean> duplicateMap = new HashMap<String,Boolean>();  
 		for(int idx = 0 ; idx<selectlist.size();idx++)
 		{
@@ -345,7 +368,7 @@ public class Main {
 				duplicateMap.put(selectlist.get(idx).toString().replace("AVG(", "SUM("),true);
 			}
 			else {
-				
+
 			}
 		}
 		Map<String,Double> aggrMap = new HashMap<String,Double>(); 
@@ -361,11 +384,11 @@ public class Main {
 		String groupKey = "";
 		if(isStarPresent && whereclauseabsent){
 			sb.append(String
-							.join(
-									System.getProperty("line.separator")
-									,Files.readAllLines(Paths.get(csvFile_local_copy))
-									)
-							);
+					.join(
+							System.getProperty("line.separator")
+							,Files.readAllLines(Paths.get(csvFile_local_copy))
+							)
+					);
 		}
 		else if(whereclauseabsent){
 			lineCounter =0;
@@ -388,7 +411,7 @@ public class Main {
 			lineCounter=0;
 			while((line=br.readLine())!=null)
 			{
-				
+
 				rowData = line.split("\\|",-1);
 				if(e.eval(whereExpression).toBool()){
 					lineCounter++;
@@ -397,21 +420,31 @@ public class Main {
 					if(plain.getLimit()!=null && lineCounter==plain.getLimit().getRowCount())
 						break;
 				}				
-				
+
 			}
 		}
 		else if(isAggregate && (groupByColumns==null)){// if no group by but aggregate is present // old code			
-			Aggregate.setColumnDataTypes(columnDataTypes);
-			Aggregate.setColumnNameToIndexMapping(columnNameToIndexMapping);
-			Aggregate.setPlain(plain);
-			Aggregate.getSelectedColumns(tableName, whereExpression);
-			simplePrint = true;
+
+			
+			Thread m = new MyThread2(null,tableName,whereExpression,columnDataTypes,columnNameToIndexMapping, plain);
+			m.start();
+			
+			Thread m2 = new MyThread2(tableName,tableName+"2",whereExpression,columnDataTypes,columnNameToIndexMapping, plain);
+			m2.start();
+			
+//						Aggregate a = new Aggregate();
+//						a.setColumnDataTypes(columnDataTypes);
+//						a.setColumnNameToIndexMapping(columnNameToIndexMapping);
+//						a.setPlain(plain);
+//						a.getSelectedColumns(tableName, whereExpression);
+//					//	Aggregate.getSelectedColumns(tableName+"2", whereExpression);
+						simplePrint = true;
 		}
 		else {//if group by is present and where is present
 			lineCounter = 0;
 			//Timer t = new Timer();
 			Date d = new Date();
-			
+
 			int hrs = d.getHours();
 			int min = d.getMinutes();
 			int sec = d.getSeconds();
@@ -441,12 +474,12 @@ public class Main {
 						}
 					}
 					//Key Should be generated according to group order by
-					
+
 					//if(e.eval(((SelectExpressionItem)selectItems.get(i)).getExpression()))
 					if(!isAggregate && (groupByColumns==null)){
 						for(int i=0;i<selectItems.size();i++)
 						{
-							
+
 							result = e.eval(((SelectExpressionItem)selectItems.get(i)).getExpression());
 							sb.append(result.toRawString().concat("|"));
 						}
@@ -604,17 +637,13 @@ public class Main {
 		//sb.setLength(sb.length() - 1);
 		System.out.println(sb.toString());//to print normal queries
 	}
-	public static void orderElements(){
-		
-	}
-	public static Expression inExpression(InExpression exp){
-
-
-		return null;
+	public  void orderElements(){
 
 	}
+	
 
 	public static void main(String[] args) throws Exception {
+		Main main = new Main();
 		System.out.print("$>");
 		scan = new Scanner(System.in);
 		String temp;
@@ -623,12 +652,12 @@ public class Main {
 		{
 			query+=temp+" ";
 			if(temp.indexOf(';')>=0){
-				readQueries(query);
-				parseQueries();
+				main.readQueries(query);
+				main.parseQueries();
 				System.out.print("$>");
 				query="";
 			}
-			
+
 		}
 		scan.close();
 
@@ -636,7 +665,7 @@ public class Main {
 
 
 
-	static class EvalLib extends Eval{
+	 class EvalLib extends Eval{
 		String tableName = "";
 		public EvalLib(String tableName){
 			this.tableName = tableName;
@@ -658,15 +687,7 @@ public class Main {
 				return new DoubleValue(rowData[index]);
 				//return new DoubleValue(record.get(index));
 			case "date":
-
-				Date date=null;
-				try {
-					date = new SimpleDateFormat("yyyy-MM-ddd").parse(rowData[index]);
-				} catch (java.text.ParseException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				return new DateValue(new SimpleDateFormat("yyyy-MM-dd").format(date));
+				return new DateValue(rowData[index]);
 				//return new DateValue(record.get(index));
 			default:
 				return new StringValue(rowData[index]);
@@ -674,5 +695,162 @@ public class Main {
 			}
 		}
 	}
+
+	public class MyRunnable implements Runnable {
+		public void run() {
+			System.out.println(" Create Thread " + Thread.currentThread().getName());
+		}
+	}
+
+
 }
+
+class MyThread2 extends Thread {
+	private Thread t=null ;
+	
+	public String tableName = "";
+	public Expression whereExpression = null;
+	public String originalTable = "";
+	public PlainSelect plain= null;	
+	public Map<String,Map<String,Integer>> colNameToIndexMapping = null;
+	public Map<String, ArrayList<String>> colDataTypes = null;
+	
+	public void start(){
+		if (t == null) {
+	         t = new Thread (this, tableName);
+	         t.start ();
+	      }
+
+	}
+	
+	public MyThread2(String originalTable, String tableName,Expression whereExpression
+			, Map<String, ArrayList<String>> colDataTypes
+			,Map<String,Map<String,Integer>> colNameToIndexMapping
+			,PlainSelect plain) {
+		super("MyThread2");
+		this.tableName = tableName;
+		this.whereExpression = whereExpression;
+		this.originalTable = originalTable;
+		this.colDataTypes = colDataTypes;
+		this.colNameToIndexMapping =colNameToIndexMapping;
+		this.plain = plain;
+	}
+	public void run() {
+		try{
+			
+				
+			if(originalTable!=null){
+				Date d = new Date();
+				long t1 = d.getTime();
+				
+				System.out.println("-------T1-----");
+//				for(int i=0;i<100;i++){
+//					System.out.println("T1->"+i);
+//					Thread.sleep(50);
+//				}
+				final ThreadLocal<Aggregate> threadId =
+						new ThreadLocal<Aggregate>() {
+					@Override protected Aggregate initialValue() {
+						return new Aggregate();
+					}
+				};
+				try{
+					Map<String, ArrayList<String>> a2MapDT= new HashMap<String, ArrayList<String>>();
+					a2MapDT.put(tableName, colDataTypes.get(originalTable));
+					Map<String, Map<String,Integer>> a2MapIndex= new HashMap<String, Map<String,Integer>>();
+					a2MapIndex.put(tableName, colNameToIndexMapping.get(originalTable));				
+					
+					threadId.get().setColumnNameToIndexMapping(a2MapIndex);
+					threadId.get().setColumnDataTypes(a2MapDT);
+					threadId.get().setPlain(plain);
+					threadId.get().getSelectedColumns(tableName, whereExpression);
+					
+
+				}
+				catch(Exception ex){
+					ex.printStackTrace();
+				}
+				d = new Date();
+				long t2 = d.getTime();
+				System.out.println(tableName+"->Time taken->"+(t2-t1));
+			}
+			//http://www.tutorialspoint.com/java/java_multithreading.htm
+			else{
+				Date d = new Date();
+				long t1 = d.getTime();
+				try{
+					System.out.println("-------T2-----");
+//								for(int i=0;i<100;i++){
+//									System.out.println("T2->"+i);
+//									Thread.sleep(50);
+//								}
+
+					final ThreadLocal<Aggregate> threadId =
+							new ThreadLocal<Aggregate>() {
+						@Override protected Aggregate initialValue() {
+							return new Aggregate();
+						}
+					};
+
+					threadId.get().setColumnDataTypes(colDataTypes);
+					threadId.get().setColumnNameToIndexMapping(colNameToIndexMapping);
+					threadId.get().setPlain(plain);
+					threadId.get().getSelectedColumns(tableName, whereExpression);
+					//threadId.get().func2(originalTable,tableName, whereExpression);
+				}
+				catch(Exception ex){
+					ex.printStackTrace();
+				}
+				d = new Date();
+				long t2 = d.getTime();
+				System.out.println(tableName+"->Time taken->"+(t2-t1));
+			}
+			
+			
+			
+		}
+		catch(Exception ex){
+			ex.printStackTrace();
+		}
+	}
+	//	public static void setTableName(String tableName) {
+	//		MyThread1.tableName = tableName;
+	//	}
+	//	public static void setWhereExpression(Expression whereExpression) {
+	//		MyThread1.whereExpression = whereExpression;
+	//	}
+
+} 
+
+//class MyThread1 extends Thread {
+//	public static String tableName = "";
+//	public static String originalTable = "";
+//	public static Expression whereExpression = null;
+//	public static PlainSelect plain= null;	
+//	public static Map<String,Map<String,Integer>> colNameToIndexMapping = null;
+//	public static  Map<String, ArrayList<String>> colDataTypes = null;
+//	public MyThread1(String originalTable, String tableName,Expression whereExpression
+//			, Map<String, ArrayList<String>> colDataTypes
+//			,Map<String,Map<String,Integer>> colNameToIndexMapping
+//			,PlainSelect plain) {
+//		super("MyThread1");
+//		MyThread1.tableName = tableName;
+//		MyThread1.whereExpression = whereExpression;
+//		MyThread1.originalTable = originalTable;
+//		MyThread1.colDataTypes = colDataTypes;
+//		MyThread1.colNameToIndexMapping =colNameToIndexMapping;
+//		MyThread1.plain = plain;
+//	}
+//	public void run() {
+//		
+//	}
+//	//	public static void setTableName(String tableName) {
+//	//		MyThread1.tableName = tableName;
+//	//	}
+//	//	public static void setWhereExpression(Expression whereExpression) {
+//	//		MyThread1.whereExpression = whereExpression;
+//	//	}
+//
+//} 
+
 

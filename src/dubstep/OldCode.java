@@ -8,27 +8,25 @@
 //create table R(A int, B String, C String, D int ); select A,B from R where (A=1 and B=2) OR (C>4 AND B=1) AND (B>2 OR D =9)
 
 package dubstep;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
 import java.io.StringReader;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
+
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.TreeSet;
-import java.util.function.DoubleSupplier;
-import java.util.stream.Collectors;
-import java.util.stream.DoubleStream;
-import java.util.stream.Stream;
-
+import java.util.Date.*;
 import net.sf.jsqlparser.expression.DateValue;
 import net.sf.jsqlparser.expression.DoubleValue;
 import net.sf.jsqlparser.expression.Expression;
@@ -48,46 +46,40 @@ import net.sf.jsqlparser.statement.select.Select;
 import net.sf.jsqlparser.statement.select.SelectBody;
 import net.sf.jsqlparser.statement.select.SelectExpressionItem;
 import net.sf.jsqlparser.statement.select.SelectItem;
-import net.sf.jsqlparser.eval.*;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
 
 
-public class Aggregate{
+public class OldCode{
 
 
-	private String[] rowData = null;
+	static String[] rowData = null;
 	
 	//aggregateHistory is HashMap <Table ,<Aggregate Value of each column in this table>> 
-	private  Map<String,Map<String,Map<String,Double>>> aggregateHistory=new HashMap<String,Map<String,Map<String,Double>>> ();
+	public static Map<String,Map<String,Map<String,Double>>> aggregateHistory=new HashMap<String,Map<String,Map<String,Double>>> ();
 	//public enum columndDataTypess  {String,varchar,Char,Int,decimal,date}; 
-	private  BufferedReader br = null;
-	
-	private  String csvFile = "src\\dubstep\\data\\";
+	public static BufferedReader br = null;
+	//
+
+	static Reader in = null;
+	public static String csvFile = "src\\dubstep\\data\\";
 	//public static String csvFile = "data/";
-	private  String line = "";
-	private  Statement statement;
-	private static Scanner scan;
-	private  CCJSqlParser parser;
-	private  PlainSelect plain;
-	private  Map<String,ArrayList <String>> columnDataTypes = new HashMap<String,ArrayList <String>>();
-	private  Map<String,Map<String,Integer>> columnNameToIndexMapping = new HashMap<String,Map<String,Integer>>();
-	private  Select select;
-	private  SelectBody body;
-	private  Map<String, PrimitiveValue> rowMap= null;
-	private  String[] columnDataTypeArray = null;
-	private  String[] columnIndexArray = null;
-	private  List<String> columnIndexList = null;
+	public static String line = "";
+	public static Statement statement;
+	public static Scanner scan;
+	public static CCJSqlParser parser;
+	public static PlainSelect plain;
+	public static Map<String,ArrayList <String>> columnDataTypes = new HashMap<String,ArrayList <String>>();
+	public static Map<String,Map<String,Integer>> columnNameToIndexMapping = new HashMap<String,Map<String,Integer>>();
+	public static Select select;
+	public static SelectBody body;
+	public static Map<String, PrimitiveValue> rowMap= null;
+	public static String[] columnDataTypeArray = null;
+	public static String[] columnIndexArray = null;
+	public static List<String> columnIndexList = null;
 
 	public static void main(String[] args) throws Exception
 	{
 
-		Aggregate agg = new Aggregate();
+
 		System.out.print("$>");
 		scan = new Scanner(System.in);
 		String temp;
@@ -95,17 +87,17 @@ public class Aggregate{
 		{
 			
 			//Read Lines from console which contains multiple CreateTable/Selection Queries
-			agg.readQueries(temp);
+			readQueries(temp);
 
 			//Call function to Start Parsing each Statemetn one by One
-			agg.parseQueries();
+			parseQueries();
 			System.out.print("$>");
 		}
 		scan.close();
 	}
 
 
-	public  void parseQueries() throws Exception
+	public static void parseQueries() throws Exception
 	{
 
 		while(statement != null)
@@ -129,12 +121,12 @@ public class Aggregate{
 
 
 
-	public void parseSelectStatement() throws Exception
+	public static void parseSelectStatement() throws Exception
 	{
-		
+
 		select = (Select)statement;
 		body = select.getSelectBody();
-		
+
 
 		if(body instanceof PlainSelect){
 
@@ -159,10 +151,11 @@ public class Aggregate{
 	3> If its Plain query, fetch the Select value using Evallib
 	4> If its Aggregate Query, then perform the operation as per aggregate function
 	*/
-	public  void getSelectedColumns(String tableName, Expression whereExpression) throws IOException
+	public static void getSelectedColumns(String tableName, Expression whereExpression) throws IOException
 	{
 		try{
-
+			Date d1 = new Date();
+			long t1 = d1.getTime();
 			//Initialize Variable
 			columnIndexArray = new String[columnNameToIndexMapping.get(tableName).keySet().size()];
 			columnDataTypeArray = new String[columnDataTypes.get(tableName).size()];
@@ -204,8 +197,8 @@ public class Aggregate{
 				originalSelectList.add(((SelectExpressionItem)select).getExpression());
 			}
 
-			//System.out.println(Integer.MAX_VALUE);
-			List<Double> test = new ArrayList<Double>();
+
+			
 			//History of Aggregate Function is saved
 			//If Already Aggregate Computation exists(from last query which was executed), delete this entry from to-Compute list
 			//Also, delete duplicate Selects in a single query.			
@@ -305,7 +298,6 @@ public class Aggregate{
 				selectlist = l;
 			}
 			double count_All=0;
-			int innerCount = 0;
 			Function  item= null;
 			Expression operand = null;
 			if(isStarPresent){ // If a star is present then read the file at once to avoid i/o costs
@@ -327,15 +319,12 @@ public class Aggregate{
 						//If All the needed information already exists in Memory, Dont do any Computation 
 				}
 				else{
-					
 					while((line=br.readLine())!=null)     //Read all the lines 1-by-1
 					{
-						//System.out.println(tableName);
 						count_All++;
 						rowData = line.split("\\|",-1);
 						if(whereclauseabsent || e.eval(whereExpression).toBool())
 						{
-							
 							if (is_aggregate == false) //If there is no Aggregate Statement in Query
 							{
 								for(int i=0;i<selectItems.size()-1;i++)
@@ -375,8 +364,6 @@ public class Aggregate{
 										case 'M':      //if Sum
 											operand = (Expression) item.getParameters().getExpressions().get(0);
 											result = e.eval(operand);
-											//test.add(e.eval(operand).toDouble());
-											//innerCount++;
 											if(result !=null)
 											{
 												aggrMap[i]+=result.toDouble();
@@ -389,7 +376,10 @@ public class Aggregate{
 												result = e.eval(operand);
 												if(result!=null)
 												{
+													if(e.eval(operand)!=null)
+													{
 														aggrMap[i]+=1;
+													}
 												}
 											}
 											break;
@@ -417,8 +407,7 @@ public class Aggregate{
 					}
 				}
 			}		
-			double [] t = test.stream().mapToDouble((i->i)).toArray();
-			//System.out.println(Arrays.stream(t).sum());
+			
 			//Update the Values to hasTable
 			if(is_aggregate==true)
 			{
@@ -438,6 +427,7 @@ public class Aggregate{
 					{
 						columnName= ((Function) selectlist.get(i)).getParameters().getExpressions().get(0).toString();
 					}						
+						
 
 					if(selectlist.get(i) instanceof Function)
 					{
@@ -447,7 +437,6 @@ public class Aggregate{
 								||item.getName().equals("MAX")) && !item.toString().toLowerCase().equals("count(*)"))
 						{
 							aggregateHistory.get(tableName).get(columnName).replace(item.getName(),aggrMap[i]);
-							
 							//System.out.println(aggregateHistory.get(tableName));
 						}
 						else if(item.getName().equals("AVG"))
@@ -501,7 +490,6 @@ public class Aggregate{
 								Double temp= aggregateHistory.get(tableName).get(columnName).get(item.getName());
 								sb.append((type.equals("long")||type.equals("int"))? temp.longValue()+"|":temp+"|");
 							}
-							
 						}
 						else if(item.getName().equalsIgnoreCase("AVG")){
 							sb.append(aggregateHistory.get(tableName).get(columnName).get(item.getName())+"|");
@@ -519,6 +507,9 @@ public class Aggregate{
 				sb.append("\n");
 			}
 			System.out.print(sb);
+			Date d2 = new Date();
+			long t2 = d2.getTime();
+			System.out.println("time->"+(t2-t1));
 		}
 		catch(SQLException e){
 			System.out.println(e.getMessage());
@@ -533,7 +524,7 @@ public class Aggregate{
 	3> Save above extracted Values into corresponding HashMap
 	*/
 
-	public  void getColumnDataTypesAndMapColumnNameToIndex() throws SQLException, IOException
+	public static void getColumnDataTypesAndMapColumnNameToIndex() throws SQLException, IOException
 	{
 
 		CreateTable create = (CreateTable)statement;
@@ -661,7 +652,7 @@ public class Aggregate{
 	}
 
 
-	public void readQueries(String temp) throws ParseException
+	public static void readQueries(String temp) throws ParseException
 	{
 
 		StringReader input = new StringReader(temp);
@@ -669,7 +660,7 @@ public class Aggregate{
 		statement = parser.Statement();  
 	}
 
-	 class EvalLib extends Eval{
+	static class EvalLib extends Eval{
 		String tableName = "";
 		int index = 0;
 
@@ -679,7 +670,7 @@ public class Aggregate{
 		@Override
 		public PrimitiveValue eval(Column col) throws SQLException {
 			index = columnIndexList.indexOf(col.getColumnName());
-			switch( columnDataTypeArray[index].toLowerCase())
+			switch(columnDataTypeArray[index].toLowerCase())
 			{
 			case "int": 
 				return new LongValue(rowData[index]);
@@ -702,21 +693,4 @@ public class Aggregate{
 			}
 		}
 	}
-
-	public void setPlain(PlainSelect plain) {
-		this.plain = plain;
-	}
-
-
-	public void setColumnDataTypes(Map<String, ArrayList<String>> columnDataTypes) {
-		this.columnDataTypes = columnDataTypes;
-	}
-
-
-	public void setColumnNameToIndexMapping(Map<String, Map<String, Integer>> columnNameToIndexMapping) {
-		this.columnNameToIndexMapping = columnNameToIndexMapping;
-	}
-
-	
-	
 }
