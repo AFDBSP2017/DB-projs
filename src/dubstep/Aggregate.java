@@ -356,6 +356,7 @@ public class Aggregate{
 										switch (item.getName().charAt(2)){
 										case 'X':    //If Max
 											operand = (Expression) item.getParameters().getExpressions().get(0);
+											//System.out.println(operand.toString());
 											result = e.eval(operand);
 											if(aggrMap[i] < result.toDouble())
 											{
@@ -417,7 +418,7 @@ public class Aggregate{
 					}
 				}
 			}		
-			double [] t = test.stream().mapToDouble((i->i)).toArray();
+			//double [] t = test.stream().mapToDouble((i->i)).toArray();
 			//System.out.println(Arrays.stream(t).sum());
 			//Update the Values to hasTable
 			if(is_aggregate==true)
@@ -493,7 +494,7 @@ public class Aggregate{
 							int index = 0 ;
 							if(columnNameToIndexMapping.get(tableName).get(columnName)==null){
 								index = -1;
-								sb.append( aggregateHistory.get(tableName).get(columnName).get(item.getName()));
+								sb.append( aggregateHistory.get(tableName).get(columnName).get(item.getName())+"|");
 							}
 							else {
 								index = columnNameToIndexMapping.get(tableName).get(columnName);
